@@ -7,9 +7,9 @@ Live Demo: [CUK Academic Portal](https://nimrawani04.github.io/cukAcademicPortal
 
 ---
 
-## 📌 Features
+##  Features
 
-### 🔑 Registration & Authentication
+###  Registration & Authentication
 - **New User Registration** (Student/Faculty)
 - Email confirmation & credentials (within 24–48 hrs)
 - **Password Reset** with 24-hour expiry links
@@ -19,7 +19,7 @@ Live Demo: [CUK Academic Portal](https://nimrawani04.github.io/cukAcademicPortal
 
 ---
 
-### 🧑‍🏫 Teacher Dashboard
+###  Teacher Dashboard
 - **Notice Management**
   - Create/manage notices with priority & expiry
   - Example: Mid-Term Exam Schedule, Library Hours Extension
@@ -39,7 +39,7 @@ Live Demo: [CUK Academic Portal](https://nimrawani04.github.io/cukAcademicPortal
 
 ---
 
-### 🎓 Student Dashboard
+###  Student Dashboard
 - **Notices**: Prioritized announcements with read/unread status
 - **My Courses**: Enrolled courses with grades & attendance
 - **My Marks**: Breakdown by CIA, Assignments, Attendance
@@ -61,14 +61,14 @@ Live Demo: [CUK Academic Portal](https://nimrawani04.github.io/cukAcademicPortal
 
 ---
 
-## ⚙️ Tech Info
+##  Tech Info
 - **Portal Type**: Academic Management
 - **Access**: Web-based (hosted via GitHub Pages)
 - **Role-based Dashboards**: Separate views for Teachers & Students
 
 ---
 
-## 📞 Contact
+##  Contact
 - **University**: Central University of Kashmir  
 - **Location**: Ganderbal, Jammu & Kashmir, India  
 - **Phone**: +91 70065 26348  
@@ -76,7 +76,7 @@ Live Demo: [CUK Academic Portal](https://nimrawani04.github.io/cukAcademicPortal
 
 ---
 
-## 📚 Quick Links
+##  Quick Links
 - Academic Calendar  
 - Student Handbook  
 - Faculty Directory  
