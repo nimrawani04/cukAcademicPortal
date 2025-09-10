@@ -85,7 +85,7 @@ Live Demo: [CUK Academic Portal](https://nimrawani04.github.io/cukAcademicPortal
 
 ---
 
-## 📝 License / Credits
+##  License / Credits
 - Developed by **Nimra Wani**
 - © Central University of Kashmir  
 - Includes: Privacy Policy, Terms of Service, Accessibility
