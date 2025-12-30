@@ -1,0 +1,69 @@
+# Render Blueprint for Academic Portal Deployment
+services:
+  - type: web
+    name: academic-portal-backend
+    env: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false  # Set this in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: FRONTEND_URL
+        sync: false  # Set this in Render dashboard
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: 587
+      - key: EMAIL_USER
+        sync: false  # Set this in Render dashboard
+      - key: EMAIL_PASS
+        sync: false  # Set this in Render dashboard
+      - key: EMAIL_FROM
+        value: Central University of Kashmir <noreply@cukashmir.ac.in>
+      - key: MAX_FILE_SIZE
+        value: 5242880
+      - key: ALLOWED_FILE_TYPES
+        value: jpg,jpeg,png,pdf,doc,docx
+      - key: BCRYPT_SALT_ROUNDS
+        value: 12
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 50
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: RESET_TOKEN_EXPIRES_IN
+        value: 1h
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+    autoDeploy: true
+    
+  # Optional: Static site for frontend (if hosting frontend on Render too)
+  - type: static
+    name: academic-portal-frontend
+    buildCommand: echo "No build needed for static HTML"
+    staticPublishPath: .
+    envVars:
+      - key: REACT_APP_API_URL
+        fromService:
+          type: web
+          name: academic-portal-backend
+          property: host
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

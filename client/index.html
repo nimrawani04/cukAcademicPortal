@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -6,6 +6,7 @@
     <title>Central University of Kashmir - Academic Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="js/api.js"></script>
     <style>
       /* Smooth fade-in animation */
       .fade-in {
@@ -236,10 +237,10 @@
             <div class="mt-8 p-6 bg-blue-50 rounded-xl border border-blue-200">
                 <h4 class="font-bold text-sm text-blue-800 mb-3">Registration Process</h4>
                 <div class="text-sm text-blue-700 space-y-2">
-                    <div>• Your registration will be reviewed by the administration</div>
-                    <div>• You will receive a confirmation email within 24-48 hours</div>
-                    <div>• Login credentials will be provided after approval</div>
-                    <div>• For urgent queries, contact: +91-194-2424000</div>
+                    <div>â€¢ Your registration will be reviewed by the administration</div>
+                    <div>â€¢ You will receive a confirmation email within 24-48 hours</div>
+                    <div>â€¢ Login credentials will be provided after approval</div>
+                    <div>â€¢ For urgent queries, contact: +91-194-2424000</div>
                 </div>
             </div>
         </div>
@@ -263,7 +264,6 @@
                 <form id="forgotPasswordForm" onsubmit="handleForgotPassword(event)">
                     <div class="mb-6">
                         <label class="block text-sm font-semibold text-gray-200 mb-3">User Type</label>
-
                         <select id="forgotUserType" class="professional-input w-full px-5 py-4 rounded-xl font-medium text-slate-800" required>
                             <option value="">Select User Type</option>
                             <option value="student">Student</option>
@@ -272,9 +272,17 @@
                     </div>
                     
                     <div class="mb-6">
-                        <label id="forgotIdLabel" class="block text-sm font-semibold text-gray-200 mb-3">Email Address or ID</label>
-
-                        <input type="text" id="forgotId" class="professional-input w-full px-5 py-4 rounded-xl font-medium text-slate-800" placeholder="Enter your email or ID" required>
+                        <label class="block text-sm font-semibold text-gray-200 mb-3">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="forgotId" 
+                            class="professional-input w-full px-5 py-4 rounded-xl font-medium text-slate-800" 
+                            placeholder="Enter your registered email address" 
+                            required
+                        >
+                        <div class="mt-2 text-xs text-gray-300">
+                            Enter the email address associated with your account
+                        </div>
                     </div>
                     
                     <div class="flex space-x-4 mb-6">
@@ -295,23 +303,39 @@
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                         </svg>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-800 mb-2">Reset Link Sent!</h3>
-                    <p class="text-slate-600 text-sm">We've sent a password reset link to your email address. Please check your inbox and follow the instructions.</p>
+                    <h3 class="text-xl font-bold text-white mb-2">Reset Link Sent!</h3>
+                    <p class="text-gray-300 text-sm mb-4">We've sent a password reset link to your email address. Please check your inbox and follow the instructions.</p>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <h4 class="font-semibold text-blue-900 mb-2">What's Next?</h4>
+                        <div class="text-sm text-blue-800 space-y-1">
+                            <div>1. Check your email inbox (and spam folder)</div>
+                            <div>2. Click the reset link in the email</div>
+                            <div>3. Create your new secure password</div>
+                            <div>4. Log in with your new password</div>
+                        </div>
+                    </div>
                 </div>
                 
-                <button onclick="closeForgotPasswordModal()" class="w-full executive-button text-white py-4 px-6 rounded-xl font-bold text-lg">
-                    Close
-                </button>
-            </div>
+                <div class="flex space-x-4">
+                    <button onclick="closeForgotPasswordModal()" class="flex-1 executive-button text-white py-4 px-6 rounded-xl font-bold text-lg">
+                        Close
+                    </button>
+                    <button onclick="resendResetLink()" class="flex-1 university-secondary text-white py-4 px-6 rounded-xl font-bold text-lg hover:shadow-lg transition-all duration-300">
+                        Resend Link
+                    </button>
+                </div>
+            </div></div>""
             
             <!-- Help Section -->
             <div class="mt-8 p-6 bg-yellow-50 rounded-xl border border-yellow-200">
                 <h4 class="font-bold text-sm text-yellow-800 mb-3">Need Help?</h4>
                 <div class="text-sm text-yellow-700 space-y-2">
                     <div>• Check your spam/junk folder for the reset email</div>
-                    <div>• Reset link expires in 24 hours</div>
+                    <div>• Reset link expires in 1 hour for security</div>
+                    <div>• Make sure you enter the correct email address</div>
                     <div>• Contact IT Support: support@cukashmir.ac.in</div>
-                    <div>• Call: +91-194-2424000 (Ext: 123)</div>
+                    <div>• Call: +91-194-2424000</div>
                 </div>
             </div>
         </div>
@@ -571,7 +595,7 @@
                           Mid-Term Examination Schedule
                         </h5>
                         <p class="text-sm text-gray-600">
-                          Published: Jan 15, 2024 • Expires: Feb 15, 2024
+                          Published: Jan 15, 2024 â€¢ Expires: Feb 15, 2024
                         </p>
                         <span
                           class="px-2 py-1 bg-red-100 text-red-800 rounded text-sm"
@@ -598,7 +622,7 @@
                       1-10, 2024. Please check the detailed schedule...
                     </p>
                     <div class="text-xs text-gray-500">
-                      Target: All Students • Views: 156 • Notifications Sent:
+                      Target: All Students â€¢ Views: 156 â€¢ Notifications Sent:
                       200
                     </div>
                   </div>
@@ -612,7 +636,7 @@
                           Library Hours Extended
                         </h5>
                         <p class="text-sm text-gray-600">
-                          Published: Jan 12, 2024 • Expires: Jan 31, 2024
+                          Published: Jan 12, 2024 â€¢ Expires: Jan 31, 2024
                         </p>
                         <span
                           class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm"
@@ -640,7 +664,7 @@
                       examination period...
                     </p>
                     <div class="text-xs text-gray-500">
-                      Target: All Students • Views: 89 • Notifications Sent: 200
+                      Target: All Students â€¢ Views: 89 â€¢ Notifications Sent: 200
                     </div>
                   </div>
                 </div>
@@ -1923,7 +1947,7 @@
                         CPU Scheduling Algorithms
                       </h5>
                       <p class="text-gray-600">
-                        Operating Systems • Due: Jan 20, 2024 • Max: 100 marks
+                        Operating Systems â€¢ Due: Jan 20, 2024 â€¢ Max: 100 marks
                       </p>
                       <p class="text-sm text-gray-500 mt-1">
                         Implement FCFS, SJF, and Round Robin scheduling
@@ -2147,8 +2171,8 @@
                             Computer Organization Chapter 3 - Memory Systems
                           </h5>
                           <p class="text-sm text-gray-600">
-                            Computer Organization & Architecture • Lecture Notes
-                            • Uploaded: Jan 15, 2024
+                            Computer Organization & Architecture â€¢ Lecture Notes
+                            â€¢ Uploaded: Jan 15, 2024
                           </p>
                           <span
                             class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm"
@@ -2176,7 +2200,7 @@
                       and virtual memory
                     </p>
                     <div class="text-xs text-gray-500">
-                      Downloads: 45 • Size: 2.3 MB • Format: PDF
+                      Downloads: 45 â€¢ Size: 2.3 MB â€¢ Format: PDF
                     </div>
                   </div>
 
@@ -2193,7 +2217,7 @@
                             Data Structures - Binary Tree Implementation
                           </h5>
                           <p class="text-sm text-gray-600">
-                            Data Structures • Video Tutorial • Uploaded: Jan 12,
+                            Data Structures â€¢ Video Tutorial â€¢ Uploaded: Jan 12,
                             2024
                           </p>
                           <span
@@ -2222,7 +2246,7 @@
                       and traversal algorithms
                     </p>
                     <div class="text-xs text-gray-500">
-                      Views: 23 • Duration: 15:30 • Size: 45.2 MB • Format: MP4
+                      Views: 23 â€¢ Duration: 15:30 â€¢ Size: 45.2 MB â€¢ Format: MP4
                     </div>
                   </div>
                 </div>
@@ -2322,7 +2346,7 @@
                         XYZ (ST001)
                       </h5>
                       <p class="text-gray-600">
-                        Sick Leave • Jan 18-20, 2024 (3 days)
+                        Sick Leave â€¢ Jan 18-20, 2024 (3 days)
                       </p>
                       <span
                         class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-medium"
@@ -2378,7 +2402,7 @@
                         LMN (ST002)
                       </h5>
                       <p class="text-gray-600">
-                        Emergency Leave • Jan 19, 2024 (1 day)
+                        Emergency Leave â€¢ Jan 19, 2024 (1 day)
                       </p>
                       <span
                         class="px-2 py-1 bg-red-100 text-red-800 rounded text-sm font-medium"
@@ -2436,7 +2460,7 @@
                         Mike Wilson (ST003)
                       </h5>
                       <p class="text-gray-600">
-                        Family Function • Jan 10-12, 2024 (3 days)
+                        Family Function â€¢ Jan 10-12, 2024 (3 days)
                       </p>
                       <span
                         class="px-2 py-1 bg-green-100 text-green-800 rounded text-sm font-medium"
@@ -2615,7 +2639,7 @@
                           Mid-Term Examination Schedule
                         </h5>
                         <p class="text-sm text-gray-600">
-                          Published: Jan 15, 2024 • Expires: Feb 15, 2024
+                          Published: Jan 15, 2024 â€¢ Expires: Feb 15, 2024
                         </p>
                         <span
                           class="px-2 py-1 bg-red-100 text-red-800 rounded text-sm"
@@ -2666,7 +2690,7 @@
                           Library Hours Extended
                         </h5>
                         <p class="text-sm text-gray-600">
-                          Published: Jan 12, 2024 • Expires: Jan 31, 2024
+                          Published: Jan 12, 2024 â€¢ Expires: Jan 31, 2024
                         </p>
                         <span
                           class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm"
@@ -2675,7 +2699,7 @@
                         >
                       </div>
                     </div>
-                    <span class="text-green-600 text-sm">✓ Read</span>
+                    <span class="text-green-600 text-sm">âœ“ Read</span>
                   </div>
                   <p class="text-sm text-gray-700 mb-3">
                     Library hours have been extended till 10 PM during
@@ -2704,7 +2728,7 @@
                           New Course Registration Open
                         </h5>
                         <p class="text-sm text-gray-600">
-                          Published: Jan 10, 2024 • Expires: Jan 25, 2024
+                          Published: Jan 10, 2024 â€¢ Expires: Jan 25, 2024
                         </p>
                         <span
                           class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm"
@@ -3081,7 +3105,7 @@
                       <div>
                         <span
                           class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-medium"
-                          >⚠️ Eligible (85-90%)</span
+                          >âš ï¸ Eligible (85-90%)</span
                         >
                       </div>
                     </div>
@@ -3182,7 +3206,7 @@
                           Computer Organization & Architecture
                         </h5>
                         <p class="text-sm text-gray-600">
-                          COA-301 • Mr. ABC • 3 Credits
+                          COA-301 â€¢ Mr. ABC â€¢ 3 Credits
                         </p>
                         <span
                           class="px-2 py-1 bg-green-100 text-green-800 rounded text-sm"
@@ -3223,7 +3247,7 @@
                           Operating Systems
                         </h5>
                         <p class="text-sm text-gray-600">
-                          OS-401 • Mr. ABC • 4 Credits
+                          OS-401 â€¢ Mr. ABC â€¢ 4 Credits
                         </p>
                         <span
                           class="px-2 py-1 bg-green-100 text-green-800 rounded text-sm"
@@ -3271,7 +3295,7 @@
                           Computer Graphics
                         </h5>
                         <p class="text-sm text-gray-600">
-                          CG-302 • Ms. pqr • 3 Credits
+                          CG-302 â€¢ Ms. pqr â€¢ 3 Credits
                         </p>
                         <span
                           class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm"
@@ -3312,7 +3336,7 @@
                           Database Management System
                         </h5>
                         <p class="text-sm text-gray-600">
-                          DBMS-301 • Ms. pqr • 4 Credits
+                          DBMS-301 â€¢ Ms. pqr â€¢ 4 Credits
                         </p>
                         <span
                           class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-sm"
@@ -3367,27 +3391,27 @@
                     <div class="text-3xl font-bold text-blue-600">3.8</div>
                     <div class="text-sm text-gray-600">Current GPA</div>
                     <div class="text-xs text-green-600">
-                      ↑ +0.2 from last semester
+                      â†‘ +0.2 from last semester
                     </div>
                   </div>
                   <div class="text-center p-4 bg-green-50 rounded-lg">
                     <div class="text-3xl font-bold text-green-600">92%</div>
                     <div class="text-sm text-gray-600">Avg Attendance</div>
                     <div class="text-xs text-green-600">
-                      ↑ +3% from last month
+                      â†‘ +3% from last month
                     </div>
                   </div>
                   <div class="text-center p-4 bg-purple-50 rounded-lg">
                     <div class="text-3xl font-bold text-purple-600">85%</div>
                     <div class="text-sm text-gray-600">Assignment Score</div>
                     <div class="text-xs text-red-600">
-                      ↓ -2% from last month
+                      â†“ -2% from last month
                     </div>
                   </div>
                   <div class="text-center p-4 bg-yellow-50 rounded-lg">
                     <div class="text-3xl font-bold text-yellow-600">18</div>
                     <div class="text-sm text-gray-600">Credits Completed</div>
-                    <div class="text-xs text-green-600">↑ +3 this semester</div>
+                    <div class="text-xs text-green-600">â†‘ +3 this semester</div>
                   </div>
                 </div>
 
@@ -3453,8 +3477,8 @@
                       </div>
                     </div>
                     <div class="mt-2 text-xs text-green-600">
-                      ✓ Strong performance in memory systems • ✓ Consistent
-                      attendance • ⚠ Focus on processor design
+                      âœ“ Strong performance in memory systems â€¢ âœ“ Consistent
+                      attendance â€¢ âš  Focus on processor design
                     </div>
                   </div>
 
@@ -3490,8 +3514,8 @@
                       </div>
                     </div>
                     <div class="mt-2 text-xs text-yellow-600">
-                      ⚠ Improve lab attendance • ✓ Good theoretical
-                      understanding • ⚠ Submit pending assignments
+                      âš  Improve lab attendance â€¢ âœ“ Good theoretical
+                      understanding â€¢ âš  Submit pending assignments
                     </div>
                   </div>
 
@@ -3527,7 +3551,7 @@
                       </div>
                     </div>
                     <div class="mt-2 text-xs text-red-600">
-                      ⚠ Attend more classes • ⚠ Complete pending assignments • ⚠
+                      âš  Attend more classes â€¢ âš  Complete pending assignments â€¢ âš 
                       Seek help for organic chemistry
                     </div>
                   </div>
@@ -3617,7 +3641,7 @@
                       ></div>
                     </div>
                     <div class="text-sm text-gray-600">
-                      Current: 3.8 GPA • Target: 4.0 GPA
+                      Current: 3.8 GPA â€¢ Target: 4.0 GPA
                     </div>
                   </div>
 
@@ -3635,7 +3659,7 @@
                       ></div>
                     </div>
                     <div class="text-sm text-gray-600">
-                      Completed: 19/24 assignments • 5 pending
+                      Completed: 19/24 assignments â€¢ 5 pending
                     </div>
                   </div>
                 </div>
@@ -3740,7 +3764,7 @@
                             Calculus Chapter 5 - Derivatives
                           </h5>
                           <p class="text-sm text-gray-600">
-                            Mathematics • Lecture Notes • Dr. Smith
+                            Mathematics â€¢ Lecture Notes â€¢ Dr. Smith
                           </p>
                           <span
                             class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm"
@@ -3748,7 +3772,7 @@
                           >
                         </div>
                         <div class="text-right text-sm text-gray-500">
-                          <div>2.3 MB • PDF</div>
+                          <div>2.3 MB â€¢ PDF</div>
                           <div>Jan 15, 2024</div>
                         </div>
                       </div>
@@ -3794,7 +3818,7 @@
                             Physics Lab - Pendulum Experiment
                           </h5>
                           <p class="text-sm text-gray-600">
-                            Physics • Video Tutorial • Prof. Johnson
+                            Physics â€¢ Video Tutorial â€¢ Prof. Johnson
                           </p>
                           <span
                             class="px-2 py-1 bg-green-100 text-green-800 rounded text-sm"
@@ -3802,7 +3826,7 @@
                           >
                         </div>
                         <div class="text-right text-sm text-gray-500">
-                          <div>45.2 MB • MP4</div>
+                          <div>45.2 MB â€¢ MP4</div>
                           <div>15:30 duration</div>
                         </div>
                       </div>
@@ -3848,7 +3872,7 @@
                             Organic Chemistry Reactions
                           </h5>
                           <p class="text-sm text-gray-600">
-                            Chemistry • Presentation • Dr. Brown
+                            Chemistry â€¢ Presentation â€¢ Dr. Brown
                           </p>
                           <span
                             class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-sm"
@@ -3856,7 +3880,7 @@
                           >
                         </div>
                         <div class="text-right text-sm text-gray-500">
-                          <div>8.7 MB • PPT</div>
+                          <div>8.7 MB â€¢ PPT</div>
                           <div>Jan 10, 2024</div>
                         </div>
                       </div>
@@ -3903,7 +3927,7 @@
                           Organic Chemistry Reactions
                         </div>
                         <div class="text-xs text-gray-600">
-                          Chemistry • Presentation
+                          Chemistry â€¢ Presentation
                         </div>
                       </div>
                     </div>
@@ -3916,7 +3940,7 @@
                           Linear Algebra Notes
                         </div>
                         <div class="text-xs text-gray-600">
-                          Mathematics • Lecture Notes
+                          Mathematics â€¢ Lecture Notes
                         </div>
                       </div>
                     </div>
@@ -3940,7 +3964,7 @@
                         Calculus Problem Set 1
                       </h5>
                       <p class="text-gray-600">
-                        Mathematics • Due: Jan 20, 2024
+                        Mathematics â€¢ Due: Jan 20, 2024
                       </p>
                       <p class="text-sm text-gray-500 mt-1">
                         Solve differential equations from chapter 5
@@ -3976,7 +4000,7 @@
                       <h5 class="font-semibold text-lg text-gray-900">
                         Physics Lab Report
                       </h5>
-                      <p class="text-gray-600">Physics • Due: Jan 18, 2024</p>
+                      <p class="text-gray-600">Physics â€¢ Due: Jan 18, 2024</p>
                       <p class="text-sm text-gray-500 mt-1">
                         Pendulum motion analysis
                       </p>
@@ -4022,7 +4046,7 @@
                   <div class="text-sm text-gray-600">Books Returned</div>
                 </div>
                 <div class="bg-white rounded-lg p-4 shadow text-center">
-                  <div class="text-2xl font-bold text-red-600">₹50</div>
+                  <div class="text-2xl font-bold text-red-600">â‚¹50</div>
                   <div class="text-sm text-gray-600">Pending Fees</div>
                 </div>
                 <div class="bg-white rounded-lg p-4 shadow text-center">
@@ -4121,7 +4145,7 @@
                       </div>
                     </div>
                     <div class="mt-2 text-xs text-red-600">
-                      Late fee: ₹50 (₹10 per day)
+                      Late fee: â‚¹50 (â‚¹10 per day)
                     </div>
                   </div>
 
@@ -4301,14 +4325,14 @@
                       <span
                         class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium"
                       >
-                        ⏳ Pending
+                        â³ Pending
                       </span>
                     </div>
                     <p class="text-sm text-gray-700 mb-2">
                       Reason: Fever and flu symptoms, doctor advised rest
                     </p>
                     <div class="text-xs text-gray-500">
-                      Applied: Jan 17, 2024 • Priority: Normal • Contact:
+                      Applied: Jan 17, 2024 â€¢ Priority: Normal â€¢ Contact:
                       +91-9876543210
                     </div>
                     <div class="mt-3 flex space-x-2">
@@ -4348,7 +4372,7 @@
                       Reason: Sister's wedding ceremony
                     </p>
                     <div class="text-xs text-gray-500">
-                      Applied: Jan 5, 2024 • Approved by: Dr. Smith • Priority:
+                      Applied: Jan 5, 2024 â€¢ Approved by: Dr. Smith â€¢ Priority:
                       Normal
                     </div>
                   </div>
@@ -4374,7 +4398,7 @@
                       Reason: Personal work
                     </p>
                     <div class="text-xs text-gray-500 mb-2">
-                      Applied: Dec 25, 2023 • Rejected by: Prof. Johnson •
+                      Applied: Dec 25, 2023 â€¢ Rejected by: Prof. Johnson â€¢
                       Priority: Normal
                     </div>
                     <div class="text-xs bg-red-100 text-red-800 p-2 rounded">
@@ -4408,1228 +4432,216 @@
     </div>
 
     <script>
+      // Keep only the essential UI functions that are not in api.js
       let currentUserType = null;
+      let currentLoginType = null;
 
       // Show login modal
-        function showLoginModal(userType) {
-            currentUserType = userType;
-            const modal = document.getElementById('loginModal');
-            const title = document.getElementById('loginTitle');
-            const idLabel = document.getElementById('loginIdLabel');
-            
-            if (userType === 'teacher') {
-                title.textContent = 'Faculty Login';
-                idLabel.textContent = 'Faculty ID';
-            } else {
-                title.textContent = 'Student Login';
-                idLabel.textContent = 'Enrollment Number';
-            }
-            
-            modal.classList.remove('hidden');
+      function showLoginModal(userType) {
+        currentUserType = userType;
+        currentLoginType = userType;
+        const modal = document.getElementById('loginModal');
+        const title = document.getElementById('loginTitle');
+        const idLabel = document.getElementById('loginIdLabel');
+        
+        if (userType === 'teacher') {
+          title.textContent = 'Faculty Login';
+          idLabel.textContent = 'Faculty ID';
+          document.getElementById('loginId').placeholder = 'Enter your Faculty ID';
+        } else if (userType === 'student') {
+          title.textContent = 'Student Login';
+          idLabel.textContent = 'Student ID';
+          document.getElementById('loginId').placeholder = 'Enter your Student ID';
         }
+        
+        modal.classList.remove('hidden');
+      }
 
-        // Show registration form
-        function showRegistration() {
-            document.getElementById('registrationModal').classList.remove('hidden');
-            document.getElementById('loginModal').classList.add('hidden');
+      // Show registration modal
+      function showRegistrationModal() {
+        document.getElementById('registrationModal').classList.remove('hidden');
+      }
+
+      function showRegistration() {
+        showRegistrationModal();
+      }
+
+      function showForgotPassword() {
+        document.getElementById('forgotPasswordModal').classList.remove('hidden');
+      }
+
+      // Close registration modal
+      function closeRegistrationModal() {
+        document.getElementById('registrationModal').classList.add('hidden');
+        document.getElementById('registrationForm').reset();
+        document.getElementById('studentFields').classList.add('hidden');
+        document.getElementById('facultyFields').classList.add('hidden');
+      }
+
+      // Close login modal
+      function closeLoginModal() {
+        document.getElementById('loginModal').classList.add('hidden');
+        document.getElementById('loginForm').reset();
+      }
+
+      // Close forgot password modal
+      function closeForgotPasswordModal() {
+        document.getElementById('forgotPasswordModal').classList.add('hidden');
+        document.getElementById('forgotPasswordForm').reset();
+        document.getElementById('forgotPasswordStep1').classList.remove('hidden');
+        document.getElementById('forgotPasswordStep2').classList.add('hidden');
+      }
+
+      // Toggle registration fields based on user type
+      function toggleRegistrationFields() {
+        const userType = document.getElementById('regType').value;
+        const studentFields = document.getElementById('studentFields');
+        const facultyFields = document.getElementById('facultyFields');
+        
+        if (userType === 'student') {
+          studentFields.classList.remove('hidden');
+          facultyFields.classList.add('hidden');
+          document.getElementById('regCourse').required = true;
+          document.getElementById('regYear').required = true;
+          document.getElementById('regDepartment').required = false;
+          document.getElementById('regDesignation').required = false;
+        } else if (userType === 'faculty') {
+          facultyFields.classList.remove('hidden');
+          studentFields.classList.add('hidden');
+          document.getElementById('regDepartment').required = true;
+          document.getElementById('regDesignation').required = true;
+          document.getElementById('regCourse').required = false;
+          document.getElementById('regYear').required = false;
+        } else {
+          studentFields.classList.add('hidden');
+          facultyFields.classList.add('hidden');
+          document.getElementById('regCourse').required = false;
+          document.getElementById('regYear').required = false;
+          document.getElementById('regDepartment').required = false;
+          document.getElementById('regDesignation').required = false;
         }
+      }
 
-        // Show forgot password form
-        function showForgotPassword() {
-            document.getElementById('forgotPasswordModal').classList.remove('hidden');
-            document.getElementById('loginModal').classList.add('hidden');
-        }
+      // Show dashboard functions
+      function showStudentDashboard() {
+        document.getElementById('welcomeSection').classList.add('hidden');
+        document.getElementById('logoutBtn').classList.remove('hidden');
+        document.getElementById('studentSection').classList.remove('hidden');
+        document.getElementById('teacherSection').classList.add('hidden');
+      }
 
-        // Close registration modal
-        function closeRegistrationModal() {
-            document.getElementById('registrationModal').classList.add('hidden');
-            document.getElementById('registrationForm').reset();
-            // Hide conditional fields
-            document.getElementById('studentFields').classList.add('hidden');
-            document.getElementById('facultyFields').classList.add('hidden');
-        }
+      function showTeacherDashboard() {
+        document.getElementById('welcomeSection').classList.add('hidden');
+        document.getElementById('logoutBtn').classList.remove('hidden');
+        document.getElementById('teacherSection').classList.remove('hidden');
+        document.getElementById('studentSection').classList.add('hidden');
+      }
 
-        // Close forgot password modal
-        function closeForgotPasswordModal() {
-            document.getElementById('forgotPasswordModal').classList.add('hidden');
-            document.getElementById('forgotPasswordForm').reset();
-            // Reset to step 1
-            document.getElementById('forgotPasswordStep1').classList.remove('hidden');
-            document.getElementById('forgotPasswordStep2').classList.add('hidden');
-        }
-
-        // Toggle registration fields based on user type
-        function toggleRegistrationFields() {
-            const userType = document.getElementById('regType').value;
-            const studentFields = document.getElementById('studentFields');
-            const facultyFields = document.getElementById('facultyFields');
-            
-            if (userType === 'student') {
-                studentFields.classList.remove('hidden');
-                facultyFields.classList.add('hidden');
-                // Make student fields required
-                document.getElementById('regCourse').required = true;
-                document.getElementById('regYear').required = true;
-                // Remove faculty field requirements
-                document.getElementById('regDepartment').required = false;
-                document.getElementById('regDesignation').required = false;
-            } else if (userType === 'faculty') {
-                facultyFields.classList.remove('hidden');
-                studentFields.classList.add('hidden');
-                // Make faculty fields required
-                document.getElementById('regDepartment').required = true;
-                document.getElementById('regDesignation').required = true;
-                // Remove student field requirements
-                document.getElementById('regCourse').required = false;
-                document.getElementById('regYear').required = false;
-            } else {
-                studentFields.classList.add('hidden');
-                facultyFields.classList.add('hidden');
-                // Remove all conditional requirements
-                document.getElementById('regCourse').required = false;
-                document.getElementById('regYear').required = false;
-                document.getElementById('regDepartment').required = false;
-                document.getElementById('regDesignation').required = false;
-            }
-        }
-
-        // Handle registration form submission
-        function handleRegistration(event) {
-            event.preventDefault();
-            
-            const firstName = document.getElementById('regFirstName').value;
-            const lastName = document.getElementById('regLastName').value;
-            const email = document.getElementById('regEmail').value;
-            const phone = document.getElementById('regPhone').value;
-            const userType = document.getElementById('regType').value;
-            const password = document.getElementById('regPassword').value;
-            const confirmPassword = document.getElementById('regConfirmPassword').value;
-            const termsAccepted = document.getElementById('regTerms').checked;
-            
-            // Validate passwords match
-            if (password !== confirmPassword) {
-                alert('❌ Password Mismatch!\n\nThe passwords you entered do not match. Please make sure both password fields contain the same password.');
-                return;
-            }
-            
-            // Validate password strength
-            if (password.length < 8) {
-                alert('❌ Weak Password!\n\nPassword must be at least 8 characters long.\n\n💡 Tips for a strong password:\n• Use at least 8 characters\n• Include uppercase and lowercase letters\n• Add numbers and special characters\n• Avoid common words or personal information');
-                return;
-            }
-            
-            // Validate terms acceptance
-            if (!termsAccepted) {
-                alert('❌ Terms and Conditions\n\nPlease read and accept the Terms and Conditions to proceed with registration.');
-                return;
-            }
-            
-            // Get additional fields based on user type
-            let additionalInfo = '';
-            if (userType === 'student') {
-                const course = document.getElementById('regCourse').value;
-                const year = document.getElementById('regYear').value;
-                additionalInfo = `\n📚 Course: ${course}\n📅 Year: ${year}`;
-            } else if (userType === 'faculty') {
-                const department = document.getElementById('regDepartment').value;
-                const designation = document.getElementById('regDesignation').value;
-                additionalInfo = `\n🏢 Department: ${department}\n👨‍🏫 Designation: ${designation}`;
-            }
-            
-            // Show loading state
-            const submitBtn = event.target.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = '⏳ Processing...';
-            submitBtn.disabled = true;
-            
-            // Simulate processing time
-            setTimeout(() => {
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-                
-                // Show success message
-                alert(`✅ Registration Submitted Successfully!\n\n👤 Name: ${firstName} ${lastName}\n📧 Email: ${email}\n📱 Phone: ${phone}\n🎭 Type: ${userType.charAt(0).toUpperCase() + userType.slice(1)}${additionalInfo}\n\n📋 Next Steps:\n• Your application will be reviewed within 24-48 hours\n• You'll receive a confirmation email with further instructions\n• Login credentials will be provided after approval\n• Check your email regularly for updates\n\n📞 For urgent queries: +91-194-2424000`);
-                
-                closeRegistrationModal();
-            }, 2000);
-        }
-
-        // Handle forgot password form submission
-        function handleForgotPassword(event) {
-            event.preventDefault();
-            
-            const userType = document.getElementById('forgotUserType').value;
-            const identifier = document.getElementById('forgotId').value;
-            
-            // Show loading state
-            const submitBtn = event.target.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = '⏳ Sending...';
-            submitBtn.disabled = true;
-            
-            // Simulate processing time
-            setTimeout(() => {
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-                
-                // Show step 2 (success message)
-                document.getElementById('forgotPasswordStep1').classList.add('hidden');
-                document.getElementById('forgotPasswordStep2').classList.remove('hidden');
-                
-                // In a real application, this would send an actual email
-                console.log(`Password reset requested for ${userType}: ${identifier}`);
-            }, 2000);
-        }
-
-        // Close login modal
-        function closeLoginModal() {
-            document.getElementById('loginModal').classList.add('hidden');
-            document.getElementById('loginForm').reset();
-        }
-
-        // Handle login
-        function handleLogin(event) {
-            event.preventDefault();
-            
-            const id = document.getElementById('loginId').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            // Simple validation for demo
-            const validCredentials = {
-                teacher: { id: 'T001', password: 'teacher123' },
-                student: { id: 'ST001', password: 'student123' }
-            };
-            
-            if (validCredentials[currentUserType] && 
-                id === validCredentials[currentUserType].id && 
-                password === validCredentials[currentUserType].password) {
-                
-                closeLoginModal();
-                showDashboard(currentUserType);
-            } else {
-                alert('Invalid credentials! Please use the demo credentials provided.');
-            }
-        }
-
-        // Show dashboard
-        function showDashboard(userType) {
-            document.getElementById('welcomeSection').classList.add('hidden');
-            document.getElementById('logoutBtn').classList.remove('hidden');
-            
-            if (userType === 'teacher') {
-                document.getElementById('teacherSection').classList.remove('hidden');
-                document.getElementById('studentSection').classList.add('hidden');
-            } else {
-                document.getElementById('studentSection').classList.remove('hidden');
-                document.getElementById('teacherSection').classList.add('hidden');
-            }
-        }
-
-        // Logout
-        function logout() {
-            document.getElementById('welcomeSection').classList.remove('hidden');
-            document.getElementById('teacherSection').classList.add('hidden');
-            document.getElementById('studentSection').classList.add('hidden');
-            document.getElementById('logoutBtn').classList.add('hidden');
-            currentUserType = null;
-        }
-
-        // Show  teacher tabs
+      // Tab navigation functions
       function showTeacherTab(tabName) {
-        // Hide all teacher content
         const teacherContents = document.querySelectorAll(".teacher-content");
         teacherContents.forEach((content) => content.classList.add("hidden"));
 
-        // Remove active class from all teacher tabs
-        const teacherTabs = document.querySelectorAll(
-          '[id^="teacher"][id$="Tab"]'
-        );
+        const teacherTabs = document.querySelectorAll('[id^="teacher"][id$="Tab"]');
         teacherTabs.forEach((tab) => {
           tab.classList.remove("tab-active");
           tab.classList.add("bg-gray-200", "text-gray-700");
         });
 
-        // Show selected content and activate tab
-        document
-          .getElementById(
-            "teacher" + tabName.charAt(0).toUpperCase() + tabName.slice(1)
-          )
-          .classList.remove("hidden");
-        const activeTab = document.getElementById(
-          "teacher" + tabName.charAt(0).toUpperCase() + tabName.slice(1) + "Tab"
-        );
+        document.getElementById("teacher" + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.remove("hidden");
+        const activeTab = document.getElementById("teacher" + tabName.charAt(0).toUpperCase() + tabName.slice(1) + "Tab");
         activeTab.classList.add("tab-active");
         activeTab.classList.remove("bg-gray-200", "text-gray-700");
+
+        // Load data when switching to certain tabs
+        if (tabName === 'notices') {
+          loadNotices();
+        } else if (tabName === 'marks') {
+          loadMarksData();
+        } else if (tabName === 'attendance') {
+          loadAttendanceData();
+        }
       }
 
-      // Show student tabs
       function showStudentTab(tabName) {
-        // Hide all student content
         const studentContents = document.querySelectorAll(".student-content");
         studentContents.forEach((content) => content.classList.add("hidden"));
 
-        // Remove active class from all student tabs
-        const studentTabs = document.querySelectorAll(
-          '[id^="student"][id$="Tab"]'
-        );
+        const studentTabs = document.querySelectorAll('[id^="student"][id$="Tab"]');
         studentTabs.forEach((tab) => {
           tab.classList.remove("tab-active");
           tab.classList.add("bg-gray-200", "text-gray-700");
         });
 
-        // Show selected content and activate tab
-        document
-          .getElementById(
-            "student" + tabName.charAt(0).toUpperCase() + tabName.slice(1)
-          )
-          .classList.remove("hidden");
-        const activeTab = document.getElementById(
-          "student" + tabName.charAt(0).toUpperCase() + tabName.slice(1) + "Tab"
-        );
+        document.getElementById("student" + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.remove("hidden");
+        const activeTab = document.getElementById("student" + tabName.charAt(0).toUpperCase() + tabName.slice(1) + "Tab");
         activeTab.classList.add("tab-active");
         activeTab.classList.remove("bg-gray-200", "text-gray-700");
-      }
 
-      // Teacher functions
-      function createNotice(event) {
-        event.preventDefault();
-        const title = document.getElementById("noticeTitle").value;
-        const content = document.getElementById("noticeContent").value;
-        const priority = document.getElementById("noticePriority").value;
-
-        alert(`Notice "${title}" created successfully!`);
-        document.getElementById("noticeForm").reset();
-      }
-
-      function deleteNotice(id) {
-        if (confirm("Are you sure you want to delete this notice?")) {
-          alert("Notice deleted successfully!");
+        // Load data when switching to certain tabs
+        if (tabName === 'notices') {
+          loadNotices();
         }
       }
 
-      function updateMarks(studentId) {
-        alert(`Marks updated for student ${studentId}!`);
-      }
-
-      function updateAttendance(studentId) {
-        alert(`Attendance updated for student ${studentId}!`);
-      }
-
-      // Teacher functions
-      function createAssignment() {
-        const title = document.getElementById("assignmentTitle").value;
-        if (title) {
-          alert(`Assignment "${title}" created successfully!`);
-          document.getElementById("assignmentTitle").value = "";
-          document.getElementById("assignmentDescription").value = "";
-        }
-      }
-
-      function editAssignment(id) {
-        alert(`Editing assignment ${id}`);
-      }
-
-      function deleteAssignment(id) {
-        if (confirm("Are you sure you want to delete this assignment?")) {
-          alert(`Assignment ${id} deleted successfully!`);
-        }
-      }
-
-      function uploadResource(event) {
-        event.preventDefault();
-        const title = document.getElementById("resourceTitle").value;
-        alert(`Resource "${title}" uploaded successfully!`);
-        document.getElementById("resourceForm").reset();
-      }
-
-      function editResource(id) {
-        alert(`Editing resource ${id}`);
-      }
-
-      function deleteResource(id) {
-        if (confirm("Are you sure you want to delete this resource?")) {
-          alert(`Resource ${id} deleted successfully!`);
-        }
-      }
-
-      function approveLeave(id) {
-        if (
-          confirm("Are you sure you want to approve this leave application?")
-        ) {
-          alert(`Leave application ${id} approved successfully!`);
-        }
-      }
-
-      function rejectLeave(id) {
-        if (
-          confirm("Are you sure you want to reject this leave application?")
-        ) {
-          alert(`Leave application ${id} rejected!`);
-        }
-      }
-
-      // Student functions
-      function searchBooks() {
-        const searchTerm = document.getElementById("bookSearch").value;
-        alert(`Searching for books: "${searchTerm}"`);
-      }
-
-      function requestBook(bookId) {
-        alert(`Book request submitted for ${bookId}!`);
-      }
-
-      function renewBook(bookId) {
-        alert(`Renewal request submitted for ${bookId}!`);
-      }
-
-      function returnBook(bookId) {
-        if (confirm("Are you sure you want to return this book?")) {
-          alert(`Book ${bookId} returned successfully!`);
-        }
-      }
-
-      function filterResources(type) {
-        alert(`Filtering resources by: ${type}`);
-      }
-
-      function submitAssignment(id) {
-        alert(`Assignment ${id} submitted successfully!`);
-      }
-
-      function viewAssignment(id) {
-        alert(`Viewing assignment details for ${id}`);
-      }
-
-      function submitLeaveApplication(event) {
-        event.preventDefault();
-        const leaveType = document.getElementById("leaveType").value;
-        const fromDate = document.getElementById("leaveFromDate").value;
-        const toDate = document.getElementById("leaveToDate").value;
-        alert(
-          `Leave application submitted: ${leaveType} from ${fromDate} to ${toDate}`
-        );
-        document.getElementById("leaveForm").reset();
-      }
-      // Student Notice Functions
-      function filterNotices() {
-        const priority = document.getElementById("noticeFilter").value;
-        const show = document.getElementById("noticeShow").value;
-
-        showSuccessMessage(
-          `Filtering notices by priority: ${priority}, show: ${show}`
-        );
-      }
-
-      function markAsRead(noticeId) {
-        showSuccessMessage(`Notice ${noticeId} marked as read`);
-      }
-
-      function viewFullNotice(noticeId) {
-        showSuccessMessage(`Viewing full notice ${noticeId}`);
-      }
-
-      function downloadNotice(noticeId) {
-        showSuccessMessage(`Downloading notice ${noticeId} as PDF`);
-      }
-
-      function goToCourseRegistration() {
-        showStudentTab("courses");
-        showSuccessMessage("Redirected to course registration");
-      }
-
-      // Show subject marks based on selection
-      function showSubjectMarks() {
-        const selectedSubject = document.getElementById("subjectSelect").value;
-
-        // Hide all subject marks
-        const allSubjectMarks = document.querySelectorAll(".subject-marks");
-        allSubjectMarks.forEach((marks) => marks.classList.add("hidden"));
-
-        // Show selected subject marks
-        if (selectedSubject === "mathematics") {
-          document
-            .getElementById("mathematicsMarks")
-            .classList.remove("hidden");
-        } else if (selectedSubject === "physics") {
-          document.getElementById("physicsMarks").classList.remove("hidden");
-        } else {
-          // For other subjects, show a placeholder
-          alert(`Marks for ${selectedSubject} will be available soon!`);
-          document
-            .getElementById("mathematicsMarks")
-            .classList.remove("hidden");
-        }
-      }
-
-      // Excel file handling functions
-      function handleExcelUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        console.log(
-          "File selected:",
-          file.name,
-          "Size:",
-          file.size,
-          "Type:",
-          file.type
-        );
-
-        // Validate file type
-        const fileName = file.name.toLowerCase();
-        const validExtensions = [".xlsx", ".xls", ".csv"];
-        const isValidFile = validExtensions.some((ext) =>
-          fileName.endsWith(ext)
-        );
-
-        if (!isValidFile) {
-          alert(
-            " Invalid file type!\n\nPlease upload a valid Excel file:\n• .xlsx (Excel 2007+)\n• .xls (Excel 97-2003)\n• .csv (Comma Separated Values)"
-          );
-          document.getElementById("excelFile").value = "";
-          return;
-        }
-
-        // Validate file size (10MB limit)
-        if (file.size > 10 * 1024 * 1024) {
-          alert(
-            " File too large!\n\nFile size should be less than 10MB.\nCurrent file size: " +
-              (file.size / (1024 * 1024)).toFixed(2) +
-              "MB"
-          );
-          document.getElementById("excelFile").value = "";
-          return;
-        }
-
-        // Check if we're on the correct tab
-        const marksTab = document.getElementById("teacherMarks");
-        if (marksTab && marksTab.classList.contains("hidden")) {
-          alert(
-            ' Please go to the "Manage Marks" tab first before uploading files.'
-          );
-          document.getElementById("excelFile").value = "";
-          return;
-        }
-
-        // Show loading state
-        const fileStatus = document.getElementById("fileStatus");
-        const fileStatusText = document.getElementById("fileStatusText");
-
-        if (fileStatus && fileStatusText) {
-          fileStatusText.textContent =
-            "⏳ Processing Excel file... Please wait.";
-          fileStatus.classList.remove("hidden");
-
-          // Reset to success styling
-          const statusContainer = fileStatus.querySelector("div");
-          if (statusContainer) {
-            statusContainer.className =
-              "bg-green-50 border border-green-200 rounded-lg p-4";
-          }
-          const statusIcon = fileStatus.querySelector("svg");
-          if (statusIcon) {
-            statusIcon.className = "h-5 w-5 text-green-400";
-          }
-          const statusTextElement = fileStatus.querySelector("p");
-          if (statusTextElement) {
-            statusTextElement.className = "text-sm font-medium text-green-800";
-          }
-        }
-
-        // Read and process the file
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          try {
-            console.log("File loaded, processing...");
-            let workbook;
-
-            if (fileName.endsWith(".csv")) {
-              // Handle CSV files
-              const csvData = e.target.result;
-              console.log("Processing CSV data...");
-              workbook = XLSX.read(csvData, { type: "string" });
-            } else {
-              // Handle Excel files
-              const data = new Uint8Array(e.target.result);
-              console.log("Processing Excel data...");
-              workbook = XLSX.read(data, { type: "array" });
-            }
-
-            console.log("Workbook created:", workbook);
-
-            // Get the first worksheet
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-
-            console.log("Worksheet selected:", firstSheetName);
-
-            // Convert to JSON
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-            console.log("JSON data:", jsonData);
-
-            if (!jsonData || jsonData.length < 1) {
-              throw new Error("File appears to be empty or could not be read");
-            }
-
-            if (jsonData.length < 2) {
-              throw new Error(
-                "File must contain at least a header row and one data row"
-              );
-            }
-
-            // Process the data and update the table
-            processExcelData(jsonData, file.name);
-          } catch (error) {
-            console.error("Error processing file:", error);
-
-            if (fileStatus && fileStatusText) {
-              fileStatusText.textContent = `❌ Error: ${error.message}`;
-
-              // Change to error styling
-              const statusContainer = fileStatus.querySelector("div");
-              if (statusContainer) {
-                statusContainer.className =
-                  "bg-red-50 border border-red-200 rounded-lg p-4";
-              }
-              const statusIcon = fileStatus.querySelector("svg");
-              if (statusIcon) {
-                statusIcon.className = "h-5 w-5 text-red-400";
-              }
-              const statusTextElement = fileStatus.querySelector("p");
-              if (statusTextElement) {
-                statusTextElement.className =
-                  "text-sm font-medium text-red-800";
-              }
-            }
-
-            alert(
-              `❌ Error processing file!\n\nError: ${error.message}\n\n💡 Tips:\n• Make sure the file is not corrupted\n• Check that it has proper headers\n• Try downloading and using our template\n• Ensure the file is not password protected`
-            );
-
-            // Reset file input
-            document.getElementById("excelFile").value = "";
-          }
-        };
-
-        reader.onerror = function (error) {
-          console.error("FileReader error:", error);
-          alert(
-            "❌ Error reading file!\n\nPlease try again or use a different file."
-          );
-          document.getElementById("excelFile").value = "";
-        };
-
-        // Read the file
-        if (fileName.endsWith(".csv")) {
-          reader.readAsText(file);
-        } else {
-          reader.readAsArrayBuffer(file);
-        }
-      }
-
-      function processExcelData(data, fileName) {
-        const headers = data[0];
-        const rows = data.slice(1);
-
-        // Find column indices (flexible header matching)
-        const findColumnIndex = (searchTerms) => {
-          for (let i = 0; i < headers.length; i++) {
-            const header = (headers[i] || "").toString().toLowerCase().trim();
-            if (
-              searchTerms.some((term) => header.includes(term.toLowerCase()))
-            ) {
-              return i;
-            }
-          }
-          return -1;
-        };
-
-        const columnIndices = {
-          enrollment: findColumnIndex([
-            "enrollment",
-            "enroll",
-            "student id",
-            "id",
-            "roll",
-            "number",
-          ]),
-          name: findColumnIndex(["name", "student name", "student"]),
-          cia1: findColumnIndex(["cia 1", "cia1", "test 1", "test1", "exam 1"]),
-          cia2: findColumnIndex(["cia 2", "cia2", "test 2", "test2", "exam 2"]),
-          presentation: findColumnIndex(["presentation", "present"]),
-          assignment: findColumnIndex(["assignment", "assign"]),
-          attendance: findColumnIndex(["attendance", "attend"]),
-        };
-
-        console.log("Column indices found:", columnIndices);
-        console.log("Headers:", headers);
-
-        // Update the table
-        const tableBody = document.getElementById("marksTableBody");
-        if (!tableBody) {
-          alert(
-            'Error: Could not find the marks table. Please make sure you are on the "Manage Marks" tab.'
-          );
-          return;
-        }
-
-        tableBody.innerHTML = "";
-
-        let validRows = 0;
-
-        rows.forEach((row, index) => {
-          if (!row || row.length === 0 || row.every((cell) => !cell)) return;
-
-          const enrollment =
-            columnIndices.enrollment >= 0
-              ? (row[columnIndices.enrollment] || "").toString().trim()
-              : `2324CUKmr${String(index + 1).padStart(2, "0")}`;
-
-          const name =
-            columnIndices.name >= 0
-              ? (row[columnIndices.name] || "").toString().trim()
-              : `Student ${index + 1}`;
-
-          if (!enrollment && !name) return;
-
-          const cia1 =
-            columnIndices.cia1 >= 0 ? row[columnIndices.cia1] || "" : "";
-          const cia2 =
-            columnIndices.cia2 >= 0 ? row[columnIndices.cia2] || "" : "";
-          const presentation =
-            columnIndices.presentation >= 0
-              ? row[columnIndices.presentation] || ""
-              : "";
-          const assignment =
-            columnIndices.assignment >= 0
-              ? row[columnIndices.assignment] || ""
-              : "";
-          const attendance =
-            columnIndices.attendance >= 0
-              ? row[columnIndices.attendance] || ""
-              : "";
-
-          const newRow = document.createElement("tr");
-          newRow.className = "border-b hover:bg-gray-50";
-          newRow.innerHTML = `
-                    <td class="px-4 py-3 text-gray-900 border-r font-medium">${enrollment}</td>
-                    <td class="px-4 py-3 text-gray-900 border-r">${name}</td>
-                    <td class="px-4 py-3 text-center border-r">
-                        <input type="number" value="${cia1}" class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center" min="0" max="15" step="0.5" onchange="calculateTotal(this)">
-                    </td>
-                    <td class="px-4 py-3 text-center border-r">
-                        <input type="number" value="${cia2}" class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center" min="0" max="15" step="0.5" onchange="calculateTotal(this)">
-                    </td>
-                    <td class="px-4 py-3 text-center border-r">
-                        <input type="number" value="${presentation}" class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center" min="0" max="10" step="0.5" onchange="calculateTotal(this)">
-                    </td>
-                    <td class="px-4 py-3 text-center border-r">
-                        <input type="number" value="${assignment}" class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center" min="0" max="5" step="0.5" onchange="calculateTotal(this)">
-                    </td>
-                    <td class="px-4 py-3 text-center border-r">
-                        <input type="number" value="${attendance}" class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center" min="0" max="100" onchange="calculateAttendanceMarks(this)">
-                    </td>
-                    <td class="px-4 py-3 text-center border-r">
-                        <span class="attendance-marks font-semibold text-gray-600">-</span>
-                    </td>
-                    <td class="px-4 py-3 text-center bg-gray-50 font-semibold total-marks">-</td>
-                    <td class="px-4 py-3 text-center bg-gray-50">
-                        <span class="px-2 py-1 rounded text-white grade-D grade-display">-</span>
-                    </td>
-                `;
-
-          tableBody.appendChild(newRow);
-          validRows++;
-
-          // Calculate totals for this row if values are provided
-          setTimeout(() => {
-            if (attendance) {
-              const attendanceInput = newRow.querySelector(
-                'input[onchange="calculateAttendanceMarks(this)"]'
-              );
-              calculateAttendanceMarks(attendanceInput);
-            }
-
-            if (cia1 || cia2 || presentation || assignment) {
-              const firstInput = newRow.querySelector(
-                'input[onchange="calculateTotal(this)"]'
-              );
-              calculateTotal(firstInput);
-            }
-          }, 100);
-        });
-
-        // Show success message
-        const fileStatusText = document.getElementById("fileStatusText");
-        fileStatusText.textContent = `Excel file "${fileName}" processed successfully! Loaded ${validRows} student records.`;
-
-        // Reset file input
-        document.getElementById("excelFile").value = "";
-
-        alert(
-          ` File processed successfully!\n\nFile: ${fileName}\n👥 Students loaded: ${validRows}\n\n💡 Tips:\n• All data has been loaded into the table\n• Edit any marks directly in the table\n• Attendance marks calculate automatically\n• Use "Save All Changes" to save your data\n• Use "Export to Excel" to download the updated data`
-        );
-      }
-
-      function downloadTemplate() {
-        try {
-          // Create a more comprehensive template
-          const templateData = [
-            [
-              "Enrollment No.",
-              "Student Name",
-              "CIA 1 (Out of 15)",
-              "CIA 2 (Out of 15)",
-              "Presentation (Out of 10)",
-              "Assignment (Out of 5)",
-              "Attendance %",
-            ],
-            ["ST001", "Nimra Wani", "", "", "", "", ""],
-            ["ST002", "Milad Ajaz Bhat", "", "", "", "", ""],
-            ["ST003", "Madiha", "", "", "", "", ""],
-            ["ST004", "Labeebah", "", "", "", "", ""],
-            ["ST005", "Noorain", "", "", "", "", ""],
-            ["ST006", "Insha", "", "", "", "", ""],
-            ["ST007", "Seerat", "", "", "", "", ""],
-            ["ST008", "Aina", "", "", "", "", ""],
-            ["ST009", "Inayaa", "", "", "", "", ""],
-            ["ST010", "Sofia", "", "", "", "", ""],
-          ];
-
-          // Create workbook and worksheet
-          const wb = XLSX.utils.book_new();
-          const ws = XLSX.utils.aoa_to_sheet(templateData);
-
-          // Set column widths
-          ws["!cols"] = [
-            { width: 15 }, // Enrollment No.
-            { width: 20 }, // Student Name
-            { width: 18 }, // CIA 1
-            { width: 18 }, // CIA 2
-            { width: 20 }, // Presentation
-            { width: 18 }, // Assignment
-            { width: 15 }, // Attendance %
-          ];
-
-          // Add the worksheet to workbook
-          XLSX.utils.book_append_sheet(wb, ws, "Student Marks");
-
-          // Generate and download the file
-          const fileName = `Student_Marks_Template_${
-            new Date().toISOString().split("T")[0]
-          }.xlsx`;
-          XLSX.writeFile(wb, fileName);
-
-          alert(
-            "Template downloaded successfully!\n\n Instructions:\n1. Fill in the student marks in the downloaded Excel file\n2. Keep the column headers exactly as they are\n3. Upload the completed file using the upload area above\n\n💡 Tip: You can add more students by copying the row format"
-          );
-        } catch (error) {
-          console.error("Error creating template:", error);
-
-          // Fallback to CSV if Excel generation fails
-          const csvContent = `Enrollment No.,Student Name,CIA 1 (Out of 10),CIA 2 (Out of 10),Presentation (Out of 10),Assignment (Out of 5),Attendance %
-ST001,Nimra Wani,,,,,
-ST002,Milad Ajaz Bhat,,,,,
-ST003,Madiha,,,,,
-ST004,Labeebah,,,,,
-ST005,Noorain,,,,,
-ST006,Insha,,,,,
-ST007,Seerat,,,,,
-ST008,Aina,,,,,
-ST009,Inayaa,,,,,
-ST010,Sofia,,,,,`;
-
-          const blob = new Blob([csvContent], { type: "text/csv" });
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `Student_Marks_Template_${
-            new Date().toISOString().split("T")[0]
-          }.csv`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
-
-          alert(
-            " CSV Template downloaded successfully!\n\nNote: Excel generation failed, so a CSV template was created instead."
-          );
-        }
-      }
-
-      function loadSubjectMarks() {
-        const subject = document.getElementById("subjectSelectTeacher").value;
-        const subjectName = document.getElementById("currentSubjectName");
-
-        // Update subject name display
-        const subjectNames = {
-          mathematics: "Mathematics",
-          physics: "Physics",
-          chemistry: "Chemistry",
-          "computer-science": "Computer Science",
-        };
-
-        subjectName.textContent = subjectNames[subject] || "Mathematics";
-
-        // In a real application, you would load different data for each subject
-        alert(`Loading marks for ${subjectNames[subject]}...`);
-      }
-
+      // Utility functions for marks calculation (still needed for UI)
       function calculateAttendanceMarks(input) {
-        const attendance = parseFloat(input.value) || 0;
+        const percentage = parseFloat(input.value) || 0;
         const row = input.closest("tr");
         const attendanceMarksSpan = row.querySelector(".attendance-marks");
 
         let marks = 0;
-        let status = "";
-        let colorClass = "";
+        if (percentage >= 95) marks = 5;
+        else if (percentage >= 90) marks = 4;
+        else if (percentage >= 85) marks = 3;
+        else if (percentage >= 80) marks = 2;
+        else if (percentage >= 75) marks = 1;
+        else marks = 0;
 
-        if (attendance >= 95) {
-          marks = 5;
-          status = "5";
-          colorClass = "text-green-600";
-        } else if (attendance >= 90) {
-          marks = 4;
-          status = "4";
-          colorClass = "text-blue-600";
-        } else if (attendance >= 85) {
-          marks = 3;
-          status = "3";
-          colorClass = "text-yellow-600";
-        } else if (attendance >= 80) {
-          marks = 2;
-          status = "2";
-          colorClass = "text-orange-600";
-        } else if (attendance >= 75) {
-          marks = 1;
-          status = "1";
-          colorClass = "text-purple-600";
-        } else {
-          marks = 0;
-          status = "0 (Ineligible)";
-          colorClass = "text-red-600";
-        }
-
-        attendanceMarksSpan.textContent = status;
-        attendanceMarksSpan.className = `attendance-marks font-semibold ${colorClass}`;
-
-        // Recalculate total
+        attendanceMarksSpan.textContent = marks;
         calculateTotal(input);
       }
 
       function calculateTotal(input) {
         const row = input.closest("tr");
         const inputs = row.querySelectorAll('input[type="number"]');
+        const attendanceMarksSpan = row.querySelector(".attendance-marks");
+        const totalSpan = row.querySelector(".total-marks");
+        const gradeSpan = row.querySelector(".grade-display");
 
-        // Get all marks (excluding attendance percentage)
-        const test1 = parseFloat(inputs[0].value) || 0;
-        const test2 = parseFloat(inputs[1].value) || 0;
+        const cia1 = parseFloat(inputs[0].value) || 0;
+        const cia2 = parseFloat(inputs[1].value) || 0;
         const presentation = parseFloat(inputs[2].value) || 0;
         const assignment = parseFloat(inputs[3].value) || 0;
+        const attendanceMarks = parseFloat(attendanceMarksSpan.textContent) || 0;
 
-        // Get attendance marks from the span
-        const attendanceMarksText =
-          row.querySelector(".attendance-marks").textContent;
-        const attendanceMarks = attendanceMarksText.includes("Ineligible")
-          ? 0
-          : parseFloat(attendanceMarksText) || 0;
+        const total = cia1 + cia2 + presentation + assignment + attendanceMarks;
 
-        // Calculate total (out of 50)
-        const total =
-          test1 + test2 + presentation + assignment + attendanceMarks;
-
-        // Update total display
-        const totalCell = row.querySelector(".total-marks");
-        totalCell.textContent = total.toFixed(1);
-
-        // Calculate and update grade (based on 50 marks)
-        const gradeSpan = row.querySelector(".grade-display");
         let grade = "F";
         let gradeClass = "grade-D";
 
-        if (total >= 45) {
-          grade = "A+";
-          gradeClass = "grade-A";
-        } else if (total >= 40) {
-          grade = "A";
-          gradeClass = "grade-A";
-        } else if (total >= 35) {
-          grade = "B+";
-          gradeClass = "grade-B";
-        } else if (total >= 30) {
-          grade = "B";
-          gradeClass = "grade-B";
-        } else if (total >= 25) {
-          grade = "C";
-          gradeClass = "grade-C";
-        } else {
-          grade = "F";
-          gradeClass = "grade-D";
-        }
+        if (total >= 45) { grade = "A+"; gradeClass = "grade-A"; }
+        else if (total >= 40) { grade = "A"; gradeClass = "grade-A"; }
+        else if (total >= 35) { grade = "B+"; gradeClass = "grade-B"; }
+        else if (total >= 30) { grade = "B"; gradeClass = "grade-B"; }
+        else if (total >= 25) { grade = "C+"; gradeClass = "grade-C"; }
+        else if (total >= 20) { grade = "C"; gradeClass = "grade-C"; }
+        else if (total >= 15) { grade = "D"; gradeClass = "grade-D"; }
 
+        totalSpan.textContent = total.toFixed(1);
         gradeSpan.textContent = grade;
-        gradeSpan.className = `px-2 py-1 rounded text-white ${gradeClass} grade-display`;
+        gradeSpan.className = `px-2 py-1 rounded text-white ${gradeClass}`;
       }
 
-      function exportMarks() {
-        const subject = document.getElementById("subjectSelectTeacher").value;
-        const subjectNames = {
-          mathematics: "Mathematics",
-          physics: "Physics",
-          chemistry: "Chemistry",
-          "computer-science": "Computer Science",
-        };
-
-        // Get table data
-        const table = document.getElementById("marksTable");
-        const rows = table.querySelectorAll("tbody tr");
-
-        let csvContent =
-          "Enrollment No.,Student Name,CIA 1,CIA 2,Presentation,Assignment,Attendance %,Attendance Marks,Total,Grade\n";
-
-        rows.forEach((row) => {
-          const cells = row.querySelectorAll("td");
-          const enrollmentNo = cells[0].textContent.trim();
-          const studentName = cells[1].textContent.trim();
-          const cia1 = cells[2].querySelector("input").value;
-          const cia2 = cells[3].querySelector("input").value;
-          const presentation = cells[4].querySelector("input").value;
-          const assignment = cells[5].querySelector("input").value;
-          const attendancePercent = cells[6].querySelector("input").value;
-          const attendanceMarks = cells[7].textContent.trim();
-          const total = cells[8].textContent.trim();
-          const grade = cells[9].querySelector("span").textContent.trim();
-
-          csvContent += `${enrollmentNo},${studentName},${cia1},${cia2},${presentation},${assignment},${attendancePercent},${attendanceMarks},${total},${grade}\n`;
-        });
-
-        // Create and download file
-        const blob = new Blob([csvContent], { type: "text/csv" });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${subjectNames[subject]}_Marks_${
-          new Date().toISOString().split("T")[0]
-        }.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-
-        alert(`Marks exported successfully for ${subjectNames[subject]}!`);
-      }
-
-      function saveAllMarks() {
-        // In a real application, this would save to a database
-        const subject = document.getElementById("subjectSelectTeacher").value;
-        const subjectNames = {
-          mathematics: "Mathematics",
-          physics: "Physics",
-          chemistry: "Chemistry",
-          "computer-science": "Computer Science",
-        };
-
-        // Show loading state
-        const button = event.target;
-        const originalText = button.textContent;
-        button.textContent = " Saving...";
-        button.disabled = true;
-
-        setTimeout(() => {
-          button.textContent = originalText;
-          button.disabled = false;
-          alert(
-            `All marks for ${subjectNames[subject]} have been saved successfully!`
-          );
-        }, 2000);
-      }
-
-      // Drag and drop functionality
-      function setupDragAndDrop() {
-        const dropZone = document.getElementById("dropZone");
-
-        if (!dropZone) return;
-
-        // Prevent default drag behaviors
-        ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
-          dropZone.addEventListener(eventName, preventDefaults, false);
-          document.body.addEventListener(eventName, preventDefaults, false);
-        });
-
-        // Highlight drop zone when item is dragged over it
-        ["dragenter", "dragover"].forEach((eventName) => {
-          dropZone.addEventListener(eventName, highlight, false);
-        });
-
-        ["dragleave", "drop"].forEach((eventName) => {
-          dropZone.addEventListener(eventName, unhighlight, false);
-        });
-
-        // Handle dropped files
-        dropZone.addEventListener("drop", handleDrop, false);
-
-        function preventDefaults(e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-
-        function highlight(e) {
-          dropZone.classList.add("border-blue-500", "bg-blue-50");
-        }
-
-        function unhighlight(e) {
-          dropZone.classList.remove("border-blue-500", "bg-blue-50");
-        }
-
-        function handleDrop(e) {
-          const dt = e.dataTransfer;
-          const files = dt.files;
-
-          if (files.length > 0) {
-            const file = files[0];
-            // Create a fake event object to pass to handleExcelUpload
-            const fakeEvent = {
-              target: {
-                files: [file],
-              },
-            };
-            handleExcelUpload(fakeEvent);
-          }
-        }
-      }
-
-      // Load sample data function
-      function loadSampleData() {
-        if (
-          confirm(
-            " Load Sample Data?\n\nThis will replace any existing data in the table with sample marks for all students.\n\nContinue?"
-          )
-        ) {
-          const tableBody = document.getElementById("marksTableBody");
-          if (!tableBody) {
-            alert(
-              ' Error: Please make sure you are on the "Manage Marks" tab.'
-            );
-            return;
-          }
-
-          // Sample data for the first 10 students
-          const sampleData = [
-            ["2324CUKmr01", "ABDUL WARIS", "12", "13", "8.5", "4", "95"],
-            ["2324CUKmr02", "ABRAAR SAJAD", "11", "14", "9", "5", "88"],
-            ["2324CUKmr03", "ADNAAN ZARGAR", "13", "12", "7.5", "4", "92"],
-            ["2324CUKmr04", "AFAAN HUSSAIN", "10", "11", "8", "3", "85"],
-            ["2324CUKmr05", "AINAM MUSHTAQ", "14", "15", "9.5", "5", "98"],
-            ["2324CUKmr06", "ALEEM KANYU", "9", "10", "7", "3", "78"],
-            ["2324CUKmr07", "ARSALAN YOUSUF", "12", "13", "8.5", "4", "90"],
-            ["2324CUKmr08", "ASEEF BANDEY", "11", "12", "8", "4", "87"],
-            ["2324CUKmr09", "ATISHAM", "13", "14", "9", "5", "94"],
-            ["2324CUKmr10", "BIAL AHMAD", "10", "9", "7.5", "3", "82"],
-          ];
-
-          tableBody.innerHTML = "";
-
-          sampleData.forEach((rowData, index) => {
-            const newRow = document.createElement("tr");
-            newRow.className = "border-b hover:bg-gray-50";
-            newRow.innerHTML = `
-                        <td class="px-4 py-3 text-gray-900 border-r font-medium">${rowData[0]}</td>
-                        <td class="px-4 py-3 text-gray-900 border-r">${rowData[1]}</td>
-                        <td class="px-4 py-3 text-center border-r">
-                            <input type="number" value="${rowData[2]}" class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center" min="0" max="15" step="0.5" onchange="calculateTotal(this)">
-                        </td>
-                        <td class="px-4 py-3 text-center border-r">
-                            <input type="number" value="${rowData[3]}" class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center" min="0" max="15" step="0.5" onchange="calculateTotal(this)">
-                        </td>
-                        <td class="px-4 py-3 text-center border-r">
-                            <input type="number" value="${rowData[4]}" class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center" min="0" max="10" step="0.5" onchange="calculateTotal(this)">
-                        </td>
-                        <td class="px-4 py-3 text-center border-r">
-                            <input type="number" value="${rowData[5]}" class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center" min="0" max="5" step="0.5" onchange="calculateTotal(this)">
-                        </td>
-                        <td class="px-4 py-3 text-center border-r">
-                            <input type="number" value="${rowData[6]}" class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center" min="0" max="100" onchange="calculateAttendanceMarks(this)">
-                        </td>
-                        <td class="px-4 py-3 text-center border-r">
-                            <span class="attendance-marks font-semibold text-gray-600">-</span>
-                        </td>
-                        <td class="px-4 py-3 text-center bg-gray-50 font-semibold total-marks">-</td>
-                        <td class="px-4 py-3 text-center bg-gray-50">
-                            <span class="px-2 py-1 rounded text-white grade-D grade-display">-</span>
-                        </td>
-                    `;
-
-            tableBody.appendChild(newRow);
-
-            // Calculate totals for this row
-            setTimeout(() => {
-              const attendanceInput = newRow.querySelector(
-                'input[onchange="calculateAttendanceMarks(this)"]'
-              );
-              calculateAttendanceMarks(attendanceInput);
-
-              const firstInput = newRow.querySelector(
-                'input[onchange="calculateTotal(this)"]'
-              );
-              calculateTotal(firstInput);
-            }, 50);
-          });
-
-          alert(
-            " Sample data loaded successfully!\n\n Loaded 10 students with sample marks\n You can now edit any marks directly in the table"
-          );
-        }
-      }
-
-      // Clear all data function
-      function clearAllData() {
-        if (
-          confirm(
-            " Clear All Data?\n\n This will remove all student data from the table.\n\nThis action cannot be undone. Continue?"
-          )
-        ) {
-          const tableBody = document.getElementById("marksTableBody");
-          if (tableBody) {
-            tableBody.innerHTML = `
-                        <tr class="text-center">
-                            <td colspan="10" class="px-4 py-8 text-gray-500">
-                                <div class="text-4xl mb-2"></div>
-                                <div class="text-lg font-medium">No student data</div>
-                                <div class="text-sm">Upload an Excel file or load sample data to get started</div>
-                            </td>
-                        </tr>
-                    `;
-
-            // Hide file status
-            const fileStatus = document.getElementById("fileStatus");
-            if (fileStatus) {
-              fileStatus.classList.add("hidden");
-            }
-
-            alert(
-              " Table cleared successfully!\n\n You can now:\n• Upload a new Excel file\n• Load sample data\n• Add students manually"
-            );
-          }
-        }
-      }
-
-      // Initialize drag and drop when page loads
-      document.addEventListener("DOMContentLoaded", function () {
-        setupDragAndDrop();
-      });
-
-      // Close modal when clicking outside
-      document
-        .getElementById("loginModal")
-        .addEventListener("click", function (e) {
-          if (e.target === this) {
-            closeLoginModal();
-          }
-        });
-
+      // Clear notice form
+      function clearNoticeForm() {
+        const form = document.getElementById('noticeForm');
+        form.reset();
+        form.removeAttribute('data-edit-id');
         
-
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.textContent = 'Publish Notice';
+      }
     </script>
 
    <!-- Footer -->
