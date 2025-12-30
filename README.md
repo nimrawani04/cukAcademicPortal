@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Academic Portal
 
 A full-stack academic portal built with Node.js, Express, and MongoDB using MVC architecture. This system allows students, teachers, and administrators to manage courses, assignments, and academic activities.
