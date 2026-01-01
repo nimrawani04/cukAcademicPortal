@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Portal - Minimal Working</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.show { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; max-width: 400px; width: 90%; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">🎓 Academic Portal - Minimal Working</h1>
+        
+        <!-- Status Display -->
+        <div id="status" class="bg-blue-100 p-4 rounded mb-4">
+            <h3 class="font-bold">🔍 System Status:</h3>
+            <div id="statusContent">Loading...</div>
+        </div>
+        
+        <!-- Test Buttons -->
+        <div class="bg-white p-6 rounded shadow mb-6">
+            <h3 class="text-xl font-bold mb-4">🧪 Frontend Tests</h3>
+            <button onclick="testBasicClick()" class="bg-blue-500 text-white px-4 py-2 rounded mr-2">Test Click</button>
+            <button onclick="testConsoleLog()" class="bg-green-500 text-white px-4 py-2 rounded mr-2">Test Console</button>
+            <button onclick="testBackendHealth()" class="bg-purple-500 text-white px-4 py-2 rounded mr-2">Test Backend</button>
+        </div>
+        
+        <!-- Registration Form -->
+        <div class="bg-white p-6 rounded shadow mb-6">
+            <h3 class="text-xl font-bold mb-4">📝 Registration Test</h3>
+            <form onsubmit="handleRegistration(event)" id="registrationForm">
+                <div class="mb-4">
+                    <input type="text" id="regName" placeholder="Full Name" class="w-full p-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <input type="email" id="regEmail" placeholder="Email" class="w-full p-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <input type="password" id="regPassword" placeholder="Password (6+ chars)" class="w-full p-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="regTerms" required>
+                        <span class="ml-2">I accept the terms</span>
+                    </label>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded">Register</button>
+            </form>
+        </div>
+        
+        <!-- Login Form -->
+        <div class="bg-white p-6 rounded shadow mb-6">
+            <h3 class="text-xl font-bold mb-4">🔐 Login Test</h3>
+            <form onsubmit="handleLogin(event)" id="loginForm">
+                <div class="mb-4">
+                    <input type="email" id="loginEmail" placeholder="Email" value="demo@student.com" class="w-full p-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <input type="password" id="loginPassword" placeholder="Password" value="demo123" class="w-full p-2 border rounded" required>
+                </div>
+                <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded">Login</button>
+            </form>
+        </div>
+        
+        <!-- Results -->
+        <div id="results" class="bg-gray-50 p-4 rounded">
+            <h3 class="font-bold mb-2">📊 Results:</h3>
+            <div id="resultContent">No tests run yet</div>
+        </div>
+    </div>
+
+    <script>
+        // ===== STEP 1: BASIC JAVASCRIPT VERIFICATION =====
+        console.log('🚀 MINIMAL FRONTEND SCRIPT LOADED');
+        
+        // Global variables
+        let API_BASE_URL = 'http://localhost:5001';
+        
+        // ===== STEP 2: DOM READY HANDLER =====
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ DOM CONTENT LOADED');
+            updateStatus('✅ JavaScript loaded and DOM ready');
+        });
+        
+        // ===== STEP 3: UTILITY FUNCTIONS =====
+        function updateStatus(message) {
+            console.log('📊 Status update:', message);
+            document.getElementById('statusContent').innerHTML = message;
+        }
+        
+        function addResult(message, type = 'info') {
+            console.log('📝 Result:', message);
+            const resultContent = document.getElementById('resultContent');
+            const timestamp = new Date().toLocaleTimeString();
+            resultContent.innerHTML += `<div class="mb-2 p-2 rounded ${type === 'success' ? 'bg-green-100' : type === 'error' ? 'bg-red-100' : 'bg-blue-100'}">[${timestamp}] ${message}</div>`;
+        }
+        
+        // ===== STEP 4: BASIC TEST FUNCTIONS =====
+        function testBasicClick() {
+            console.log('🖱️ BASIC CLICK TEST');
+            addResult('🖱️ Basic click handler works!', 'success');
+            updateStatus('✅ Click handlers are working');
+        }
+        
+        function testConsoleLog() {
+            console.log('📝 CONSOLE LOG TEST - This should appear in browser console (F12)');
+            addResult('📝 Console log test - check browser console (F12)', 'info');
+            alert('Check browser console (F12) for log messages');
+        }
+        
+        // ===== STEP 5: BACKEND CONNECTION TEST =====
+        async function testBackendHealth() {
+            console.log('🏥 TESTING BACKEND HEALTH');
+            addResult('🏥 Testing backend connection...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/health`);
+                console.log('📥 Backend response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('📄 Backend data:', data);
+                
+                addResult(`✅ Backend connected: ${data.message} (Port: ${data.port})`, 'success');
+                updateStatus('✅ Backend connection working');
+                
+            } catch (error) {
+                console.error('💥 Backend connection failed:', error);
+                addResult(`❌ Backend connection failed: ${error.message}`, 'error');
+                updateStatus('❌ Backend connection failed');
+            }
+        }
+        
+        // ===== STEP 6: REGISTRATION HANDLER =====
+        async function handleRegistration(event) {
+            event.preventDefault();
+            console.log('📝 REGISTRATION FORM SUBMITTED');
+            
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const termsAccepted = document.getElementById('regTerms').checked;
+            
+            console.log('📋 Form data:', { name, email, passwordLength: password.length, termsAccepted });
+            
+            // Basic validation
+            if (!name || !email || !password) {
+                addResult('❌ Please fill all fields', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                addResult('❌ Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            if (!termsAccepted) {
+                addResult('❌ Please accept the terms', 'error');
+                return;
+            }
+            
+            // Show processing
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Registering...';
+            submitBtn.disabled = true;
+            
+            try {
+                addResult('🌐 Sending registration request...', 'info');
+                
+                const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email, password })
+                });
+                
+                console.log('📥 Registration response status:', response.status);
+                
+                const data = await response.json();
+                console.log('📄 Registration response data:', data);
+                
+                if (data.success) {
+                    addResult(`✅ Registration successful: ${data.data.name} (${data.data.email})`, 'success');
+                    document.getElementById('registrationForm').reset();
+                } else {
+                    addResult(`❌ Registration failed: ${data.message}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('💥 Registration error:', error);
+                addResult(`💥 Registration error: ${error.message}`, 'error');
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+        
+        // ===== STEP 7: LOGIN HANDLER =====
+        async function handleLogin(event) {
+            event.preventDefault();
+            console.log('🔐 LOGIN FORM SUBMITTED');
+            
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            console.log('📧 Login attempt for:', email);
+            
+            if (!email || !password) {
+                addResult('❌ Please enter email and password', 'error');
+                return;
+            }
+            
+            // Show processing
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Logging in...';
+            submitBtn.disabled = true;
+            
+            try {
+                addResult('🌐 Sending login request...', 'info');
+                
+                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                console.log('📥 Login response status:', response.status);
+                
+                const data = await response.json();
+                console.log('📄 Login response data:', data);
+                
+                if (data.success) {
+                    addResult(`✅ Login successful: Welcome ${data.data.user.name}!`, 'success');
+                    localStorage.setItem('authToken', data.data.token);
+                    localStorage.setItem('currentUser', JSON.stringify(data.data.user));
+                } else {
+                    addResult(`❌ Login failed: ${data.message}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('💥 Login error:', error);
+                addResult(`💥 Login error: ${error.message}`, 'error');
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+        
+        // ===== STEP 8: ERROR HANDLING =====
+        window.addEventListener('error', function(event) {
+            console.error('💥 GLOBAL JAVASCRIPT ERROR:', event.error);
+            addResult(`💥 JavaScript Error: ${event.error.message}`, 'error');
+            updateStatus('❌ JavaScript error occurred');
+        });
+        
+        // ===== STEP 9: INITIALIZATION =====
+        console.log('🎯 MINIMAL FRONTEND INITIALIZATION COMPLETE');
+    </script>
+</body>
+</html>

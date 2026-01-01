@@ -49,7 +49,7 @@ services:
         value: 1h
       - key: LOG_LEVEL
         value: info
-    healthCheckPath: /health
+    healthCheckPath: /api/health
     autoDeploy: true
     
   # Optional: Static site for frontend (if hosting frontend on Render too)

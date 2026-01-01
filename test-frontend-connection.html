@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Frontend ↔ Backend Connection Test</h1>
+    <p>This page tests the connection between frontend (port 5500) and backend (port 5001)</p>
+    
+    <div id="results"></div>
+    
+    <button onclick="testHealth()">Test Health Endpoint</button>
+    <button onclick="testRegistration()">Test Registration</button>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="runAllTests()">Run All Tests</button>
+    
+    <!-- Load our API configuration -->
+    <script src="client/js/api.js"></script>
+    
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+            console.log(message);
+        }
+        
+        async function testHealth() {
+            addResult('🏥 Testing Health Endpoint...', 'info');
+            try {
+                const { data } = await authAPI.health();
+                addResult(`✅ Health Check Success: ${data.message} (Port: ${data.port})`, 'success');
+            } catch (error) {
+                addResult(`❌ Health Check Failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testRegistration() {
+            addResult('📝 Testing Registration...', 'info');
+            try {
+                const testUser = {
+                    name: 'Frontend Test User',
+                    email: `frontend-test-${Date.now()}@student.com`,
+                    password: 'test123456'
+                };
+                
+                const { data } = await authAPI.register(testUser);
+                if (data.success) {
+                    addResult(`✅ Registration Success: ${data.data.name} (${data.data.email})`, 'success');
+                } else {
+                    addResult(`❌ Registration Failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Registration Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLogin() {
+            addResult('🔐 Testing Login with demo credentials...', 'info');
+            try {
+                const { data } = await authAPI.login({
+                    email: 'demo@student.com',
+                    password: 'demo123'
+                });
+                
+                if (data.success) {
+                    addResult(`✅ Login Success: Welcome ${data.data.user.name}!`, 'success');
+                } else {
+                    addResult(`❌ Login Failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Login Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function runAllTests() {
+            document.getElementById('results').innerHTML = '';
+            addResult('🚀 Running all connection tests...', 'info');
+            
+            await testHealth();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testRegistration();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testLogin();
+            
+            addResult('🎉 All tests completed! Check results above.', 'info');
+        }
+        
+        // Auto-run health check on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            addResult('🌐 Page loaded, testing API connection...', 'info');
+            testHealth();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Frontend Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; width: 200px; }
+        .log { font-family: monospace; font-size: 12px; background: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Complete Frontend Test Suite</h1>
+        <p>This page tests all functionality of the Academic Portal frontend.</p>
+        
+        <div id="status" class="test-section info">
+            <h3>🔍 System Status</h3>
+            <div id="statusContent">Loading...</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🏥 Health Check</h3>
+            <button onclick="testHealth()">Test Backend Health</button>
+            <div id="healthResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 Registration Test</h3>
+            <input type="text" id="testName" placeholder="Full Name" value="Test User">
+            <input type="email" id="testEmail" placeholder="Email" value="">
+            <input type="password" id="testPassword" placeholder="Password" value="test123456">
+            <br>
+            <button onclick="testRegistration()">Test Registration</button>
+            <div id="registrationResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔐 Login Test</h3>
+            <input type="email" id="loginEmail" placeholder="Email" value="demo@student.com">
+            <input type="password" id="loginPassword" placeholder="Password" value="demo123">
+            <br>
+            <button onclick="testLogin()">Test Login</button>
+            <button onclick="testLoginWithRegistered()">Login with Registered User</button>
+            <div id="loginResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="clearResults()">Clear Results</button>
+            <div id="allResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 Console Logs</h3>
+            <div id="consoleLogs" style="max-height: 300px; overflow-y: auto;"></div>
+        </div>
+    </div>
+    
+    <!-- Load API -->
+    <script src="client/js/api.js"></script>
+    
+    <script>
+        let lastRegisteredEmail = '';
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logs = document.getElementById('consoleLogs');
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = `[${timestamp}] ${message}`;
+            logs.appendChild(div);
+            logs.scrollTop = logs.scrollHeight;
+            console.log(message);
+        }
+        
+        function addResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            div.innerHTML = message;
+            element.appendChild(div);
+        }
+        
+        function clearResults() {
+            ['healthResult', 'registrationResult', 'loginResult', 'allResults', 'consoleLogs'].forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+        }
+        
+        async function checkSystemStatus() {
+            const statusContent = document.getElementById('statusContent');
+            
+            try {
+                // Check if API is loaded
+                if (typeof authAPI === 'undefined') {
+                    statusContent.innerHTML = '❌ API not loaded - check client/js/api.js';
+                    return;
+                }
+                
+                // Check API base URL
+                const apiUrl = window.API_BASE_URL || 'Not defined';
+                
+                statusContent.innerHTML = `
+                    ✅ API loaded successfully<br>
+                    🌐 API Base URL: ${apiUrl}<br>
+                    📡 Ready for testing
+                `;
+                
+                addLog('✅ System status check completed', 'success');
+                
+            } catch (error) {
+                statusContent.innerHTML = `❌ System check failed: ${error.message}`;
+                addLog(`❌ System check failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testHealth() {
+            addLog('🏥 Testing health endpoint...', 'info');
+            
+            try {
+                const { data } = await authAPI.health();
+                addResult('healthResult', `✅ Health Check Success<br>
+                    Status: ${data.status}<br>
+                    Message: ${data.message}<br>
+                    Database: ${data.database}<br>
+                    Port: ${data.port}`, 'success');
+                addLog('✅ Health check successful', 'success');
+            } catch (error) {
+                addResult('healthResult', `❌ Health Check Failed<br>Error: ${error.message}`, 'error');
+                addLog(`❌ Health check failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testRegistration() {
+            const name = document.getElementById('testName').value;
+            const email = document.getElementById('testEmail').value || `test-${Date.now()}@student.com`;
+            const password = document.getElementById('testPassword').value;
+            
+            document.getElementById('testEmail').value = email; // Show generated email
+            
+            addLog(`📝 Testing registration for: ${email}`, 'info');
+            
+            try {
+                const { data } = await authAPI.register({
+                    name: name,
+                    email: email,
+                    password: password
+                });
+                
+                if (data.success) {
+                    lastRegisteredEmail = email;
+                    addResult('registrationResult', `✅ Registration Success<br>
+                        Name: ${data.data.name}<br>
+                        Email: ${data.data.email}<br>
+                        ID: ${data.data.id}<br>
+                        Created: ${new Date(data.data.createdAt).toLocaleString()}`, 'success');
+                    addLog(`✅ Registration successful for: ${email}`, 'success');
+                } else {
+                    addResult('registrationResult', `❌ Registration Failed<br>Message: ${data.message}`, 'error');
+                    addLog(`❌ Registration failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                addResult('registrationResult', `❌ Registration Error<br>Error: ${error.message}`, 'error');
+                addLog(`❌ Registration error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            addLog(`🔐 Testing login for: ${email}`, 'info');
+            
+            try {
+                const { data } = await authAPI.login({
+                    email: email,
+                    password: password
+                });
+                
+                if (data.success) {
+                    addResult('loginResult', `✅ Login Success<br>
+                        Name: ${data.data.user.name}<br>
+                        Email: ${data.data.user.email}<br>
+                        Role: ${data.data.user.role}<br>
+                        Token: ${data.data.token.substring(0, 50)}...`, 'success');
+                    addLog(`✅ Login successful for: ${email}`, 'success');
+                } else {
+                    addResult('loginResult', `❌ Login Failed<br>Message: ${data.message}`, 'error');
+                    addLog(`❌ Login failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                addResult('loginResult', `❌ Login Error<br>Error: ${error.message}`, 'error');
+                addLog(`❌ Login error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLoginWithRegistered() {
+            if (!lastRegisteredEmail) {
+                alert('Please run registration test first');
+                return;
+            }
+            
+            document.getElementById('loginEmail').value = lastRegisteredEmail;
+            document.getElementById('loginPassword').value = document.getElementById('testPassword').value;
+            
+            await testLogin();
+        }
+        
+        async function runAllTests() {
+            clearResults();
+            addLog('🚀 Running complete test suite...', 'info');
+            
+            await testHealth();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testRegistration();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testLogin();
+            
+            addResult('allResults', '🎉 All tests completed! Check individual results above.', 'success');
+            addLog('✅ Complete test suite finished', 'success');
+        }
+        
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            addLog('🚀 Frontend test page loaded', 'info');
+            checkSystemStatus();
+        });
+        
+        // Capture console errors
+        window.addEventListener('error', (event) => {
+            addLog(`💥 JavaScript Error: ${event.error.message}`, 'error');
+        });
+    </script>
+</body>
+</html>

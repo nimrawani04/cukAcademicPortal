@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Basic Test</title>
+</head>
+<body>
+    <h1>🔍 Frontend JavaScript Test</h1>
+    
+    <button onclick="testBasicClick()">Test Basic Click</button>
+    <button onclick="testConsoleLog()">Test Console Log</button>
+    <button onclick="testAlert()">Test Alert</button>
+    
+    <form onsubmit="testFormSubmit(event)">
+        <input type="text" placeholder="Test input" id="testInput">
+        <button type="submit">Test Form Submit</button>
+    </form>
+    
+    <div id="output"></div>
+    
+    <script>
+        // Test 1: Basic JavaScript execution
+        console.log('🚀 Basic test script loaded');
+        
+        // Test 2: DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ DOM Content Loaded');
+            document.getElementById('output').innerHTML = '✅ JavaScript is working!';
+        });
+        
+        // Test 3: Basic click handler
+        function testBasicClick() {
+            console.log('🖱️ Basic click handler fired');
+            document.getElementById('output').innerHTML = '🖱️ Click handler works!';
+        }
+        
+        // Test 4: Console log test
+        function testConsoleLog() {
+            console.log('📝 Console log test - this should appear in browser console');
+            alert('Check browser console (F12) for log message');
+        }
+        
+        // Test 5: Alert test
+        function testAlert() {
+            alert('🎉 Alert works! JavaScript is functioning.');
+        }
+        
+        // Test 6: Form submit handler
+        function testFormSubmit(event) {
+            event.preventDefault();
+            console.log('📋 Form submit handler fired');
+            const value = document.getElementById('testInput').value;
+            console.log('📝 Input value:', value);
+            document.getElementById('output').innerHTML = `📋 Form submitted with: "${value}"`;
+        }
+        
+        // Test 7: Error catching
+        window.addEventListener('error', function(event) {
+            console.error('💥 JavaScript Error:', event.error);
+            document.getElementById('output').innerHTML = `💥 JavaScript Error: ${event.error.message}`;
+        });
+    </script>
+</body>
+</html>

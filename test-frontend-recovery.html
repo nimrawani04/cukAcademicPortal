@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Recovery Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Frontend Recovery Test</h1>
+    <p>This page tests if the frontend JavaScript is working after fixes.</p>
+    
+    <div class="test">
+        <h3>Step 1: Basic JavaScript</h3>
+        <button onclick="testBasic()">Test Basic Click</button>
+        <div id="basicResult"></div>
+    </div>
+    
+    <div class="test">
+        <h3>Step 2: API Script Loading</h3>
+        <button onclick="testAPILoading()">Test API Loading</button>
+        <div id="apiResult"></div>
+    </div>
+    
+    <div class="test">
+        <h3>Step 3: Backend Connection</h3>
+        <button onclick="testBackend()">Test Backend</button>
+        <div id="backendResult"></div>
+    </div>
+    
+    <div class="test">
+        <h3>Step 4: Registration Form</h3>
+        <form onsubmit="testRegistration(event)">
+            <input type="text" placeholder="Name" id="testName" value="Test User" required>
+            <input type="email" placeholder="Email" id="testEmail" value="" required>
+            <input type="password" placeholder="Password" id="testPassword" value="test123456" required>
+            <button type="submit">Test Registration</button>
+        </form>
+        <div id="regResult"></div>
+    </div>
+    
+    <div class="test">
+        <h3>Console Logs</h3>
+        <p>Check browser console (F12) for detailed logs</p>
+        <button onclick="console.log('🧪 Manual console test')">Test Console Log</button>
+    </div>
+    
+    <!-- Load API script -->
+    <script src="client/js/api.js"></script>
+    
+    <script>
+        console.log('🚀 Recovery test page loaded');
+        
+        function testBasic() {
+            console.log('🖱️ Basic click test');
+            document.getElementById('basicResult').innerHTML = '<span class="success">✅ Basic JavaScript works!</span>';
+        }
+        
+        function testAPILoading() {
+            console.log('🔍 Testing API loading');
+            const result = document.getElementById('apiResult');
+            
+            if (typeof window.authAPI !== 'undefined') {
+                result.innerHTML = '<span class="success">✅ API script loaded successfully!</span>';
+                console.log('✅ authAPI is available:', window.authAPI);
+            } else {
+                result.innerHTML = '<span class="error">❌ API script not loaded</span>';
+                console.error('❌ authAPI not available');
+            }
+        }
+        
+        async function testBackend() {
+            console.log('🏥 Testing backend connection');
+            const result = document.getElementById('backendResult');
+            
+            if (typeof window.authAPI === 'undefined') {
+                result.innerHTML = '<span class="error">❌ API not loaded</span>';
+                return;
+            }
+            
+            try {
+                result.innerHTML = 'Testing...';
+                const { data } = await window.authAPI.health();
+                result.innerHTML = `<span class="success">✅ Backend connected: ${data.message}</span>`;
+                console.log('✅ Backend test successful');
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Backend failed: ${error.message}</span>`;
+                console.error('❌ Backend test failed:', error);
+            }
+        }
+        
+        async function testRegistration(event) {
+            event.preventDefault();
+            console.log('📝 Testing registration form');
+            
+            const result = document.getElementById('regResult');
+            const name = document.getElementById('testName').value;
+            const email = document.getElementById('testEmail').value || `test-${Date.now()}@test.com`;
+            const password = document.getElementById('testPassword').value;
+            
+            document.getElementById('testEmail').value = email;
+            
+            if (typeof window.authAPI === 'undefined') {
+                result.innerHTML = '<span class="error">❌ API not loaded</span>';
+                return;
+            }
+            
+            try {
+                result.innerHTML = 'Testing registration...';
+                const { data } = await window.authAPI.register({ name, email, password });
+                
+                if (data.success) {
+                    result.innerHTML = `<span class="success">✅ Registration works: ${data.data.name}</span>`;
+                    console.log('✅ Registration test successful');
+                } else {
+                    result.innerHTML = `<span class="error">❌ Registration failed: ${data.message}</span>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Registration error: ${error.message}</span>`;
+                console.error('❌ Registration test failed:', error);
+            }
+        }
+        
+        // Auto-run tests on load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Auto-running basic tests...');
+            setTimeout(testBasic, 500);
+            setTimeout(testAPILoading, 1000);
+        });
+    </script>
+</body>
+</html>

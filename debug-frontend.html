@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Frontend Issues</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 5px 0; border-radius: 3px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .info { background: #e3f2fd; color: #1565c0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Frontend Debug Tool</h1>
+    <div id="logs"></div>
+    
+    <button onclick="testAPILoad()">Test API Load</button>
+    <button onclick="testHealthCall()">Test Health Call</button>
+    <button onclick="testRegistration()">Test Registration</button>
+    <button onclick="clearLogs()">Clear Logs</button>
+    
+    <!-- Load API -->
+    <script src="client/js/api.js"></script>
+    
+    <script>
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logs.appendChild(div);
+            console.log(message);
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+        
+        function testAPILoad() {
+            log('🔍 Testing API Load...', 'info');
+            
+            if (typeof API_BASE_URL !== 'undefined') {
+                log(`✅ API_BASE_URL loaded: ${API_BASE_URL}`, 'success');
+            } else {
+                log('❌ API_BASE_URL not defined', 'error');
+            }
+            
+            if (typeof authAPI !== 'undefined') {
+                log('✅ authAPI object loaded', 'success');
+                log(`📋 authAPI methods: ${Object.keys(authAPI).join(', ')}`, 'info');
+            } else {
+                log('❌ authAPI not defined', 'error');
+            }
+        }
+        
+        async function testHealthCall() {
+            log('🏥 Testing Health Call...', 'info');
+            
+            try {
+                if (typeof authAPI === 'undefined') {
+                    log('❌ authAPI not available', 'error');
+                    return;
+                }
+                
+                log('🌐 Making health API call...', 'info');
+                const result = await authAPI.health();
+                log(`✅ Health call successful: ${JSON.stringify(result.data)}`, 'success');
+            } catch (error) {
+                log(`❌ Health call failed: ${error.message}`, 'error');
+                log(`🔍 Error details: ${error.stack}`, 'error');
+            }
+        }
+        
+        async function testRegistration() {
+            log('📝 Testing Registration...', 'info');
+            
+            try {
+                if (typeof authAPI === 'undefined') {
+                    log('❌ authAPI not available', 'error');
+                    return;
+                }
+                
+                const testUser = {
+                    name: 'Debug Test User',
+                    email: `debug-${Date.now()}@test.com`,
+                    password: 'test123456'
+                };
+                
+                log(`🌐 Registering user: ${testUser.email}`, 'info');
+                const result = await authAPI.register(testUser);
+                log(`✅ Registration successful: ${JSON.stringify(result.data)}`, 'success');
+            } catch (error) {
+                log(`❌ Registration failed: ${error.message}`, 'error');
+                log(`🔍 Error details: ${error.stack}`, 'error');
+            }
+        }
+        
+        // Auto-run diagnostics on load
+        window.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Debug page loaded', 'info');
+            testAPILoad();
+        });
+        
+        // Catch any global errors
+        window.addEventListener('error', (event) => {
+            log(`💥 Global Error: ${event.error.message}`, 'error');
+            log(`📍 At: ${event.filename}:${event.lineno}:${event.colno}`, 'error');
+        });
+    </script>
+</body>
+</html>

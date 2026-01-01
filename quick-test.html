@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick API Test</title>
+</head>
+<body>
+    <h1>Quick API Test</h1>
+    <button onclick="testAPI()">Test API Connection</button>
+    <div id="result"></div>
+    
+    <script src="client/js/api.js"></script>
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing...';
+            
+            try {
+                console.log('Testing API...');
+                const { data } = await authAPI.health();
+                result.innerHTML = `✅ SUCCESS: ${data.message} (Port: ${data.port})`;
+                console.log('API test successful:', data);
+            } catch (error) {
+                result.innerHTML = `❌ ERROR: ${error.message}`;
+                console.error('API test failed:', error);
+            }
+        }
+        
+        // Auto-test on load
+        window.addEventListener('DOMContentLoaded', testAPI);
+    </script>
+</body>
+</html>
