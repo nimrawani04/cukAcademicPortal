@@ -34,6 +34,10 @@ app.get('/api/health', (req, res) => {
 const authRoutes = require('./server/routes/authRoutes');
 app.use('/api/auth', authRoutes);
 
+// Import and use admin routes
+const adminRoutes = require('./server/routes/adminRoutes');
+app.use('/api/admin', adminRoutes);
+
 // Start server
 const startServer = async () => {
     try {

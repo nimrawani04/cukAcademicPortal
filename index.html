@@ -85,6 +85,15 @@
                     <button onclick="showLoginModal('student')" id="studentTab" class="px-6 py-3 rounded-lg font-semibold transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300">
                      Student Portal
                     </button> -->
+            <!-- Admin Portal Link -->
+            <a href="admin-login.html" 
+               class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-red-600 text-white hover:bg-red-700 text-sm flex items-center space-x-2"
+               title="Administrator Access">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+              </svg>
+              <span>Admin Portal</span>
+            </a>
             <button
               onclick="logout()"
               id="logoutBtn"
@@ -386,11 +395,11 @@
           
                
                 <div class="flex flex-col sm:flex-row gap-6 justify-center">
-                    <button onclick="showLoginModal('teacher')" class="executive-button bg-gray-400 hover:bg-gray-500 text-white px-12 py-6 rounded-2xl font-bold text-xl shadow-md hover:shadow-xl transition-all duration-300 flex items-center justify-center space-x-3">
+                    <button type="button" onclick="showLoginModal('teacher')" class="executive-button bg-gray-400 hover:bg-gray-500 text-white px-12 py-6 rounded-2xl font-bold text-xl shadow-md hover:shadow-xl transition-all duration-300 flex items-center justify-center space-x-3">
                         
                         <span>Faculty Login</span>
                     </button>
-                   <button onclick="showLoginModal('student')" 
+                   <button type="button" onclick="showLoginModal('student')" 
     class="university-secondary bg-gray-400 hover:bg-gray-500 text-white px-12 py-6 rounded-2xl font-bold text-xl shadow-md hover:shadow-xl transition-all duration-300 flex items-center justify-center space-x-3">
     
     <span>Student Login</span>
@@ -4409,10 +4418,16 @@
     </div>
 
     <script>
+      console.log("🔍 JavaScript loaded successfully!");
+      
+      // BACKEND CONFIGURATION - Your actual Render backend URL
+      const BACKEND_URL = 'https://cukacademicportal.onrender.com';
+      
       let currentUserType = null;
 
       // Show login modal
         function showLoginModal(userType) {
+            console.log("🔍 showLoginModal called with:", userType);
             currentUserType = userType;
             const modal = document.getElementById('loginModal');
             const title = document.getElementById('loginTitle');
@@ -4495,7 +4510,8 @@
         }
 
         // Handle registration form submission
-        function handleRegistration(event) {
+        async function handleRegistration(event) {
+            console.log("🔍 handleRegistration called");
             event.preventDefault();
             
             const firstName = document.getElementById('regFirstName').value;
@@ -4507,6 +4523,8 @@
             const confirmPassword = document.getElementById('regConfirmPassword').value;
             const termsAccepted = document.getElementById('regTerms').checked;
             
+            console.log("🔍 Registration data:", { firstName, lastName, email, userType });
+            
             // Validate passwords match
             if (password !== confirmPassword) {
                 alert('❌ Password Mismatch!\n\nThe passwords you entered do not match. Please make sure both password fields contain the same password.');
@@ -4514,8 +4532,8 @@
             }
             
             // Validate password strength
-            if (password.length < 8) {
-                alert('❌ Weak Password!\n\nPassword must be at least 8 characters long.\n\n💡 Tips for a strong password:\n• Use at least 8 characters\n• Include uppercase and lowercase letters\n• Add numbers and special characters\n• Avoid common words or personal information');
+            if (password.length < 6) {
+                alert('❌ Weak Password!\n\nPassword must be at least 6 characters long.');
                 return;
             }
             
@@ -4525,34 +4543,49 @@
                 return;
             }
             
-            // Get additional fields based on user type
-            let additionalInfo = '';
-            if (userType === 'student') {
-                const course = document.getElementById('regCourse').value;
-                const year = document.getElementById('regYear').value;
-                additionalInfo = `\n📚 Course: ${course}\n📅 Year: ${year}`;
-            } else if (userType === 'faculty') {
-                const department = document.getElementById('regDepartment').value;
-                const designation = document.getElementById('regDesignation').value;
-                additionalInfo = `\n🏢 Department: ${department}\n👨‍🏫 Designation: ${designation}`;
-            }
-            
             // Show loading state
             const submitBtn = event.target.querySelector('button[type="submit"]');
             const originalText = submitBtn.textContent;
             submitBtn.textContent = '⏳ Processing...';
             submitBtn.disabled = true;
             
-            // Simulate processing time
-            setTimeout(() => {
+            try {
+                console.log("🔍 Making registration request to:", `${BACKEND_URL}/api/auth/register`);
+                
+                // Make API call to registration endpoint
+                const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: `${firstName} ${lastName}`,
+                        email: email,
+                        password: password,
+                        phone: phone,
+                        userType: userType
+                    })
+                });
+
+                console.log("🔍 Registration response status:", response.status);
+                const data = await response.json();
+                console.log("🔍 Registration response data:", data);
+
+                if (data.success) {
+                    alert(`✅ Registration Successful!\n\n👤 Name: ${firstName} ${lastName}\n📧 Email: ${email}\n\n📋 Next Steps:\n• Your registration has been submitted\n• You can now login with your credentials\n• Welcome to the Academic Portal!`);
+                    closeRegistrationModal();
+                } else {
+                    alert(`❌ Registration Failed!\n\n${data.message || 'Please try again.'}`);
+                }
+                
+            } catch (error) {
+                console.error('🔍 Registration error:', error);
+                alert('❌ Registration Failed!\n\nPlease check your connection and try again.');
+            } finally {
+                // Reset button state
                 submitBtn.textContent = originalText;
                 submitBtn.disabled = false;
-                
-                // Show success message
-                alert(`✅ Registration Submitted Successfully!\n\n👤 Name: ${firstName} ${lastName}\n📧 Email: ${email}\n📱 Phone: ${phone}\n🎭 Type: ${userType.charAt(0).toUpperCase() + userType.slice(1)}${additionalInfo}\n\n📋 Next Steps:\n• Your application will be reviewed within 24-48 hours\n• You'll receive a confirmation email with further instructions\n• Login credentials will be provided after approval\n• Check your email regularly for updates\n\n📞 For urgent queries: +91-194-2424000`);
-                
-                closeRegistrationModal();
-            }, 2000);
+            }
         }
 
         // Handle forgot password form submission
@@ -4590,10 +4623,13 @@
 
         // Handle login
         async function handleLogin(event) {
+            console.log("🔍 handleLogin called");
             event.preventDefault();
             
             const email = document.getElementById('loginId').value;
             const password = document.getElementById('loginPassword').value;
+            
+            console.log("🔍 Login attempt for:", email);
             
             if (!email || !password) {
                 alert('Please enter both email and password');
@@ -4607,8 +4643,10 @@
             submitBtn.disabled = true;
 
             try {
+                console.log("🔍 Making fetch request to:", `${BACKEND_URL}/api/auth/login`);
+                
                 // Make API call to login endpoint
-                const response = await fetch('/api/auth/login', {
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -4619,7 +4657,9 @@
                     })
                 });
 
+                console.log("🔍 Response status:", response.status);
                 const data = await response.json();
+                console.log("🔍 Response data:", data);
 
                 if (data.success) {
                     // Store user data and token
@@ -4638,7 +4678,7 @@
                     alert(data.message || 'Login failed. Please check your credentials.');
                 }
             } catch (error) {
-                console.error('Login error:', error);
+                console.error('🔍 Login error:', error);
                 alert('Login failed. Please check your connection and try again.');
             } finally {
                 // Reset button state
