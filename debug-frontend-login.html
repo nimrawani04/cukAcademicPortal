@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login - Academic Portal</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 4px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .credentials { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Login Debug Tool</h1>
+        <p>Use this page to test login functionality and see detailed error messages.</p>
+        
+        <div class="credentials">
+            <h3>🔑 Working Test Credentials:</h3>
+            <p><strong>Email:</strong> demo@student.com <strong>Password:</strong> demo123</p>
+            <p><strong>Email:</strong> test@student.com <strong>Password:</strong> test123</p>
+            <p><strong>Email:</strong> john@student.com <strong>Password:</strong> student123</p>
+        </div>
+        
+        <form id="debugLoginForm">
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" value="demo@student.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" value="demo123" required>
+            </div>
+            
+            <button type="submit">🔐 Test Login</button>
+        </form>
+        
+        <div id="result"></div>
+        
+        <div id="logs" style="margin-top: 20px;">
+            <h3>📋 Debug Logs:</h3>
+            <div id="logContainer" style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <script>
+        const resultDiv = document.getElementById('result');
+        const logContainer = document.getElementById('logContainer');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logContainer.innerHTML += `[${timestamp}] ${message}<br>`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+        
+        function showResult(message, type = 'info') {
+            resultDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+        
+        document.getElementById('debugLoginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            log(`🚀 Starting login test for: ${email}`);
+            showResult('🔄 Testing login...', 'info');
+            
+            try {
+                log(`📤 Sending POST request to /api/auth/login`);
+                log(`📧 Email: ${email}`);
+                log(`🔐 Password: ${password.replace(/./g, '*')}`);
+                
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                log(`📥 Response status: ${response.status} ${response.statusText}`);
+                
+                const data = await response.json();
+                log(`📄 Response data: ${JSON.stringify(data, null, 2)}`);
+                
+                if (data.success) {
+                    showResult(`✅ LOGIN SUCCESS!<br>
+                        👤 Welcome: ${data.data.user.name}<br>
+                        🎭 Role: ${data.data.user.role}<br>
+                        🔑 Token: ${data.data.token.substring(0, 30)}...<br>
+                        📅 Time: ${new Date().toLocaleString()}`, 'success');
+                    
+                    log(`✅ Login successful for ${data.data.user.name}`);
+                    
+                    // Store in localStorage like the main app
+                    localStorage.setItem('authToken', data.data.token);
+                    localStorage.setItem('currentUser', JSON.stringify(data.data.user));
+                    log(`💾 User data stored in localStorage`);
+                    
+                } else {
+                    showResult(`❌ LOGIN FAILED<br>
+                        📝 Message: ${data.message}<br>
+                        🔍 Check your credentials and try again.`, 'error');
+                    
+                    log(`❌ Login failed: ${data.message}`);
+                }
+                
+            } catch (error) {
+                log(`💥 JavaScript Error: ${error.message}`);
+                log(`📚 Error stack: ${error.stack}`);
+                
+                showResult(`💥 CONNECTION ERROR<br>
+                    📝 Error: ${error.message}<br>
+                    🔍 Check if server is running on port 5000`, 'error');
+            }
+        });
+        
+        // Test server connection on page load
+        window.addEventListener('load', async function() {
+            log(`🌐 Page loaded - testing server connection...`);
+            
+            try {
+                const response = await fetch('/api/health');
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Server is running: ${data.message}`);
+                } else {
+                    log(`⚠️ Server responded with status: ${response.status}`);
+                }
+            } catch (error) {
+                log(`❌ Cannot connect to server: ${error.message}`);
+            }
+        });
+    </script>
+</body>
+</html>

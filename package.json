@@ -9,7 +9,13 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:email": "node test-email.js",
-    "seed": "node server/utils/seedDatabase.js"
+    "test:login": "node test-login.js",
+    "seed": "node seed-database.js",
+    "seed:db": "node seed-to-database.js",
+    "seed:test": "node test-dummy-data.js",
+    "add:users": "node add-sample-users.js",
+    "add:more": "node add-more-users.js",
+    "view:users": "node view-dummy-data.js"
   },
   "keywords": [
     "academic",

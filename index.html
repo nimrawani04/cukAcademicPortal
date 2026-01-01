@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -327,15 +327,15 @@
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
                 </div>
-                <h2 id="loginTitle" class="text-3xl font-bold text-slate-800 text-white">Faculty Login</h2>
+                <h2 id="loginTitle" class="text-3xl font-bold text-slate-800 text-white">User Login</h2>
                 <p id="loginSubtitle" class="text-slate-600 mt-3 font-medium text-gray-200">Central University of Kashmir</p>
                 <div class="w-16 h-1 bg-slate-600 rounded-full mx-auto mt-2"></div>
             </div>
             
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="mb-6">
-                    <label id="loginIdLabel" class="block text-sm font-semibold text-slate-700 mb-3 text-white ">Faculty ID</label>
-                    <input type="text" id="loginId" class="professional-input w-full px-5 py-4 rounded-xl font-medium text-slate-800" placeholder="Enter your Faculty ID" required>
+                    <label id="loginIdLabel" class="block text-sm font-semibold text-slate-700 mb-3 text-white ">Email Address</label>
+                    <input type="email" id="loginId" class="professional-input w-full px-5 py-4 rounded-xl font-medium text-slate-800" placeholder="Enter your email address" required>
                 </div>
                 
                 <div class="mb-6">
@@ -361,10 +361,11 @@
             
             <!-- Demo Credentials -->
             <div class="mt-8 p-6 bg-slate-50 rounded-xl border border-slate-200">
-                <h4 class="font-bold text-sm text-slate-800 mb-3">Demo Credentials</h4>
+                <h4 class="font-bold text-sm text-slate-800 mb-3">Demo Credentials - WORKING</h4>
                 <div id="demoCredentials" class="text-sm text-slate-700 space-y-2 font-medium">
-                    <div class="flex justify-between"><span>Faculty:</span> <code class="bg-slate-200 px-2 py-1 rounded">T001 / teacher123</code></div>
-                    <div class="flex justify-between"><span>Student:</span> <code class="bg-slate-200 px-2 py-1 rounded">ST001 / student123</code></div>
+                    <div class="flex justify-between"><span>Demo Student:</span> <code class="bg-slate-200 px-2 py-1 rounded">demo@student.com / demo123</code></div>
+                    <div class="flex justify-between"><span>Test Student:</span> <code class="bg-slate-200 px-2 py-1 rounded">test@student.com / test123</code></div>
+                    <div class="flex justify-between"><span>John Student:</span> <code class="bg-slate-200 px-2 py-1 rounded">john@student.com / student123</code></div>
                 </div>
             </div>
         </div>
@@ -4588,50 +4589,103 @@
         }
 
         // Handle login
-        function handleLogin(event) {
+        async function handleLogin(event) {
             event.preventDefault();
             
-            const id = document.getElementById('loginId').value;
+            const email = document.getElementById('loginId').value;
             const password = document.getElementById('loginPassword').value;
             
-            // Simple validation for demo
-            const validCredentials = {
-                teacher: { id: 'T001', password: 'teacher123' },
-                student: { id: 'ST001', password: 'student123' }
-            };
-            
-            if (validCredentials[currentUserType] && 
-                id === validCredentials[currentUserType].id && 
-                password === validCredentials[currentUserType].password) {
-                
-                closeLoginModal();
-                showDashboard(currentUserType);
-            } else {
-                alert('Invalid credentials! Please use the demo credentials provided.');
+            if (!email || !password) {
+                alert('Please enter both email and password');
+                return;
+            }
+
+            // Show loading state
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Logging in...';
+            submitBtn.disabled = true;
+
+            try {
+                // Make API call to login endpoint
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Store user data and token
+                    localStorage.setItem('authToken', data.data.token);
+                    localStorage.setItem('currentUser', JSON.stringify(data.data.user));
+                    
+                    // Close login modal
+                    closeLoginModal();
+                    
+                    // Show appropriate dashboard based on user role
+                    showDashboard(data.data.user.role, data.data.user);
+                    
+                    // Show success message
+                    alert(`Welcome back, ${data.data.user.name}!`);
+                } else {
+                    alert(data.message || 'Login failed. Please check your credentials.');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login failed. Please check your connection and try again.');
+            } finally {
+                // Reset button state
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
         }
 
         // Show dashboard
-        function showDashboard(userType) {
+        function showDashboard(userRole, userData) {
             document.getElementById('welcomeSection').classList.add('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
             
-            if (userType === 'teacher') {
+            // Update UI based on user role
+            if (userRole === 'faculty' || userRole === 'teacher') {
                 document.getElementById('teacherSection').classList.remove('hidden');
                 document.getElementById('studentSection').classList.add('hidden');
-            } else {
+            } else if (userRole === 'student') {
                 document.getElementById('studentSection').classList.remove('hidden');
                 document.getElementById('teacherSection').classList.add('hidden');
+            } else if (userRole === 'admin') {
+                // For now, show teacher section for admin (can be customized later)
+                document.getElementById('teacherSection').classList.remove('hidden');
+                document.getElementById('studentSection').classList.add('hidden');
+            }
+            
+            // Update user info in the UI if needed
+            if (userData) {
+                console.log('Logged in user:', userData);
+                // You can update user name, profile info, etc. here
             }
         }
 
         // Logout
         function logout() {
+            // Clear stored data
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            
+            // Reset UI
             document.getElementById('welcomeSection').classList.remove('hidden');
             document.getElementById('teacherSection').classList.add('hidden');
             document.getElementById('studentSection').classList.add('hidden');
             document.getElementById('logoutBtn').classList.add('hidden');
             currentUserType = null;
+            
+            alert('Logged out successfully');
         }
 
         // Show  teacher tabs
