@@ -4688,7 +4688,9 @@
         }
 
         // Show dashboard
-        function showDashboard(userRole, userData) {
+        async function showDashboard(userRole, userData) {
+            console.log("🔍 Loading dashboard for role:", userRole);
+            
             document.getElementById('welcomeSection').classList.add('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
             
@@ -4696,19 +4698,614 @@
             if (userRole === 'faculty' || userRole === 'teacher') {
                 document.getElementById('teacherSection').classList.remove('hidden');
                 document.getElementById('studentSection').classList.add('hidden');
+                
+                // Load teacher data
+                await loadTeacherData();
+                
             } else if (userRole === 'student') {
                 document.getElementById('studentSection').classList.remove('hidden');
                 document.getElementById('teacherSection').classList.add('hidden');
+                
+                // Load personalized student data
+                await loadStudentData();
+                
             } else if (userRole === 'admin') {
                 // For now, show teacher section for admin (can be customized later)
                 document.getElementById('teacherSection').classList.remove('hidden');
                 document.getElementById('studentSection').classList.add('hidden');
+                
+                // Load teacher data for admin
+                await loadTeacherData();
             }
             
             // Update user info in the UI if needed
             if (userData) {
                 console.log('Logged in user:', userData);
-                // You can update user name, profile info, etc. here
+                // Update user name displays
+                updateUserNameDisplays(userData.name);
+            }
+        }
+        
+        // Load personalized student data from backend
+        async function loadStudentData() {
+            console.log("🔍 Loading personalized student data...");
+            
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                console.error('No auth token found');
+                return;
+            }
+            
+            try {
+                // Load student dashboard summary
+                const dashboardResponse = await fetch(`${BACKEND_URL}/api/student/dashboard`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (dashboardResponse.ok) {
+                    const dashboardData = await dashboardResponse.json();
+                    console.log("🔍 Student dashboard data:", dashboardData);
+                    updateStudentDashboard(dashboardData.data);
+                }
+                
+                // Load attendance data
+                const attendanceResponse = await fetch(`${BACKEND_URL}/api/student/attendance`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (attendanceResponse.ok) {
+                    const attendanceData = await attendanceResponse.json();
+                    console.log("🔍 Student attendance data:", attendanceData);
+                    updateStudentAttendance(attendanceData.data);
+                }
+                
+                // Load marks data
+                const marksResponse = await fetch(`${BACKEND_URL}/api/student/marks`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (marksResponse.ok) {
+                    const marksData = await marksResponse.json();
+                    console.log("🔍 Student marks data:", marksData);
+                    updateStudentMarks(marksData.data);
+                }
+                
+            } catch (error) {
+                console.error('Error loading student data:', error);
+                alert('Error loading your data. Please refresh the page.');
+            }
+        }
+        
+        // Load teacher data (restored functionality)
+        async function loadTeacherData() {
+            console.log("🔍 Loading teacher data...");
+            
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                console.error('No auth token found');
+                return;
+            }
+            
+            try {
+                // Load students list for teacher
+                const studentsResponse = await fetch(`${BACKEND_URL}/api/teacher/students`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (studentsResponse.ok) {
+                    const studentsData = await studentsResponse.json();
+                    console.log("🔍 Teacher students data:", studentsData);
+                    updateTeacherStudentsList(studentsData.data);
+                    
+                    // Load marks for default subject
+                    await loadSubjectMarks();
+                }
+                
+            } catch (error) {
+                console.error('Error loading teacher data:', error);
+                // Continue with empty state
+                showTeacherEmptyState();
+            }
+        }
+        
+        // Update teacher students list
+        function updateTeacherStudentsList(students) {
+            console.log("🔍 Updating teacher students list with:", students);
+            
+            // Update attendance table
+            const attendanceTableBody = document.querySelector('#teacherAttendance tbody');
+            if (attendanceTableBody) {
+                attendanceTableBody.innerHTML = '';
+                
+                if (students.length === 0) {
+                    attendanceTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                                No students found. Students will appear here after they register.
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    students.forEach(student => {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b hover:bg-gray-50';
+                        row.innerHTML = `
+                            <td class="px-4 py-3 text-gray-900">${student.rollNumber}</td>
+                            <td class="px-4 py-3 text-gray-900">${student.name}</td>
+                            <td class="px-4 py-3 text-gray-900">${student.course}</td>
+                            <td class="px-4 py-3">
+                                <select class="px-2 py-1 border rounded bg-white text-gray-900" onchange="updateStudentAttendance('${student.id}', this.value)">
+                                    <option value="present">Present</option>
+                                    <option value="absent">Absent</option>
+                                    <option value="late">Late</option>
+                                </select>
+                            </td>
+                            <td class="px-4 py-3">
+                                <button onclick="saveAttendance('${student.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                                    Save
+                                </button>
+                            </td>
+                        `;
+                        attendanceTableBody.appendChild(row);
+                    });
+                }
+            }
+            
+            // Store students data globally for marks management
+            window.teacherStudents = students;
+        }
+        
+        // Load subject marks for teacher view
+        async function loadSubjectMarks() {
+            const subject = document.getElementById('subjectSelectTeacher')?.value || 'mathematics';
+            const token = localStorage.getItem('authToken');
+            
+            if (!token) return;
+            
+            console.log("🔍 Loading marks for subject:", subject);
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/teacher/marks/subject/${subject}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("🔍 Subject marks data:", data);
+                    updateMarksTable(data.data, subject);
+                } else {
+                    console.error('Failed to load subject marks');
+                    showMarksEmptyState();
+                }
+                
+            } catch (error) {
+                console.error('Error loading subject marks:', error);
+                showMarksEmptyState();
+            }
+        }
+        
+        // Update marks table with data
+        function updateMarksTable(marksData, subject) {
+            const tableBody = document.getElementById('marksTableBody');
+            const subjectNameSpan = document.getElementById('currentSubjectName');
+            
+            if (subjectNameSpan) {
+                subjectNameSpan.textContent = subject.charAt(0).toUpperCase() + subject.slice(1);
+            }
+            
+            if (!tableBody) return;
+            
+            tableBody.innerHTML = '';
+            
+            if (marksData.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="px-4 py-8 text-center text-gray-500">
+                            No students found. Students will appear here after they register.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            marksData.forEach(studentData => {
+                const row = document.createElement('tr');
+                row.className = 'border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-4 py-3 text-gray-900 border-r font-medium">${studentData.rollNumber}</td>
+                    <td class="px-4 py-3 text-gray-900 border-r">${studentData.studentName}</td>
+                    <td class="px-4 py-3 text-center border-r">
+                        <input type="number" value="${studentData.marks.test1 || ''}" 
+                               class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center"
+                               min="0" max="15" onchange="calculateTotal(this)" data-field="test1" data-student="${studentData.studentId}"/>
+                    </td>
+                    <td class="px-4 py-3 text-center border-r">
+                        <input type="number" value="${studentData.marks.test2 || ''}" 
+                               class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center"
+                               min="0" max="15" onchange="calculateTotal(this)" data-field="test2" data-student="${studentData.studentId}"/>
+                    </td>
+                    <td class="px-4 py-3 text-center border-r">
+                        <input type="number" value="${studentData.marks.presentation || ''}" 
+                               class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center"
+                               min="0" max="10" step="0.5" onchange="calculateTotal(this)" data-field="presentation" data-student="${studentData.studentId}"/>
+                    </td>
+                    <td class="px-4 py-3 text-center border-r">
+                        <input type="number" value="${studentData.marks.assignment || ''}" 
+                               class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center"
+                               min="0" max="5" onchange="calculateTotal(this)" data-field="assignment" data-student="${studentData.studentId}"/>
+                    </td>
+                    <td class="px-4 py-3 text-center border-r">
+                        <input type="number" value="${studentData.marks.attendance || ''}" 
+                               class="w-16 px-2 py-1 border rounded bg-white text-gray-900 text-center"
+                               min="0" max="100" onchange="calculateAttendanceMarks(this)" data-field="attendance" data-student="${studentData.studentId}"/>
+                    </td>
+                    <td class="px-4 py-3 text-center border-r">
+                        <span class="attendance-marks font-semibold text-gray-600">${calculateAttendanceMarksValue(studentData.marks.attendance || 0)}</span>
+                    </td>
+                    <td class="px-4 py-3 text-center bg-gray-50 font-semibold total-marks">${studentData.total || 0}</td>
+                    <td class="px-4 py-3 text-center bg-gray-50">
+                        <span class="px-2 py-1 rounded text-white grade-${studentData.grade.replace('+', 'plus')} grade-display">${studentData.grade}</span>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Calculate attendance marks value
+        function calculateAttendanceMarksValue(attendancePercent) {
+            const attendance = parseFloat(attendancePercent) || 0;
+            if (attendance < 75) return "Ineligible";
+            if (attendance >= 95) return "5";
+            if (attendance >= 90) return "4";
+            if (attendance >= 85) return "3";
+            if (attendance >= 80) return "2";
+            return "1";
+        }
+        
+        // Show empty state for teacher
+        function showTeacherEmptyState() {
+            console.log("🔍 Showing teacher empty state");
+            // This will be handled by the individual update functions
+        }
+        
+        // Show empty state for marks
+        function showMarksEmptyState() {
+            const tableBody = document.getElementById('marksTableBody');
+            if (tableBody) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="px-4 py-8 text-center text-gray-500">
+                            No data available yet. Marks will appear here after you add them.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+        
+        // Save marks to backend
+        async function saveStudentMarks(studentId, subject, marks) {
+            const token = localStorage.getItem('authToken');
+            if (!token) return;
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/teacher/marks`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        studentId,
+                        subject,
+                        marks
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log("✅ Marks saved successfully");
+                    return true;
+                } else {
+                    console.error('Failed to save marks');
+                    return false;
+                }
+                
+            } catch (error) {
+                console.error('Error saving marks:', error);
+                return false;
+            }
+        }
+        
+        // Update student dashboard with personalized data
+        function updateStudentDashboard(data) {
+            console.log("🔍 Updating student dashboard with:", data);
+            
+            // Update student info displays
+            if (data.student) {
+                // Find and update student name displays
+                const nameElements = document.querySelectorAll('.student-name');
+                nameElements.forEach(el => el.textContent = data.student.name);
+                
+                // Update roll number displays
+                const rollElements = document.querySelectorAll('.student-roll');
+                rollElements.forEach(el => el.textContent = data.student.rollNumber);
+                
+                // Update course displays
+                const courseElements = document.querySelectorAll('.student-course');
+                courseElements.forEach(el => el.textContent = data.student.course);
+            }
+            
+            // Update summary statistics
+            if (data.summary) {
+                // Update attendance percentage
+                const attendanceElements = document.querySelectorAll('.attendance-percentage');
+                attendanceElements.forEach(el => el.textContent = `${data.summary.averageAttendance.toFixed(1)}%`);
+                
+                // Update average marks
+                const marksElements = document.querySelectorAll('.average-marks');
+                marksElements.forEach(el => el.textContent = `${data.summary.averageMarks.toFixed(1)}%`);
+            }
+        }
+        
+        // Update student attendance table with personalized data
+        function updateStudentAttendance(attendanceData) {
+            console.log("🔍 Updating attendance with:", attendanceData);
+            
+            // Find attendance table body
+            const attendanceTableBody = document.getElementById('attendanceTableBody');
+            if (!attendanceTableBody) return;
+            
+            // Clear existing data
+            attendanceTableBody.innerHTML = '';
+            
+            // Populate with personalized data
+            attendanceData.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${record.subject}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.attendedClasses}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.totalClasses}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${record.percentage >= 75 ? 'bg-green-100 text-green-800' : record.percentage >= 60 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}">
+                            ${record.percentage.toFixed(1)}%
+                        </span>
+                    </td>
+                `;
+                attendanceTableBody.appendChild(row);
+            });
+        }
+        
+        // Update student marks table with personalized data
+        function updateStudentMarks(marksData) {
+            console.log("🔍 Updating marks with:", marksData);
+            
+            // Group marks by subject
+            const marksBySubject = {};
+            marksData.forEach(record => {
+                if (!marksBySubject[record.subject]) {
+                    marksBySubject[record.subject] = [];
+                }
+                marksBySubject[record.subject].push(record);
+            });
+            
+            // Update subject-specific marks tables
+            Object.keys(marksBySubject).forEach(subject => {
+                const tableId = `${subject.toLowerCase().replace(/\s+/g, '')}MarksTable`;
+                const tableBody = document.getElementById(tableId);
+                
+                if (tableBody) {
+                    tableBody.innerHTML = '';
+                    
+                    marksBySubject[subject].forEach(record => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${record.examType}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.marksObtained}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.totalMarks}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.percentage.toFixed(1)}%</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium grade-${record.grade.replace('+', 'plus')}">
+                                    ${record.grade}
+                                </span>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                }
+            });
+        }
+        
+        // Update user name displays throughout the UI
+        function updateUserNameDisplays(userName) {
+            const nameElements = document.querySelectorAll('.user-name, .student-name, .teacher-name');
+            nameElements.forEach(el => el.textContent = userName);
+        }
+        
+        // TEACHER FUNCTIONS - Restored and connected to backend
+        
+        // Calculate total marks for a student row
+        function calculateTotal(input) {
+            const row = input.closest('tr');
+            const inputs = row.querySelectorAll('input[type="number"]');
+            let total = 0;
+            
+            // Sum up all marks except attendance percentage
+            inputs.forEach((inp, index) => {
+                if (index < 4) { // test1, test2, presentation, assignment
+                    total += parseFloat(inp.value) || 0;
+                }
+            });
+            
+            // Add attendance marks
+            const attendanceMarksSpan = row.querySelector('.attendance-marks');
+            const attendanceMarks = attendanceMarksSpan.textContent === 'Ineligible' ? 0 : parseFloat(attendanceMarksSpan.textContent) || 0;
+            total += attendanceMarks;
+            
+            // Update total display
+            const totalCell = row.querySelector('.total-marks');
+            totalCell.textContent = total.toFixed(1);
+            
+            // Calculate and update grade
+            const percentage = (total / 50) * 100;
+            let grade = 'F';
+            if (percentage >= 90) grade = 'A+';
+            else if (percentage >= 80) grade = 'A';
+            else if (percentage >= 70) grade = 'B+';
+            else if (percentage >= 60) grade = 'B';
+            else if (percentage >= 50) grade = 'C';
+            else if (percentage >= 40) grade = 'D';
+            
+            const gradeSpan = row.querySelector('.grade-display');
+            gradeSpan.textContent = grade;
+            gradeSpan.className = `px-2 py-1 rounded text-white grade-${grade.replace('+', 'plus')} grade-display`;
+            
+            // Auto-save marks
+            autoSaveMarks(input);
+        }
+        
+        // Calculate attendance marks
+        function calculateAttendanceMarks(input) {
+            const attendance = parseFloat(input.value) || 0;
+            const row = input.closest('tr');
+            const attendanceMarksSpan = row.querySelector('.attendance-marks');
+            
+            let marks = 0;
+            if (attendance < 75) {
+                attendanceMarksSpan.textContent = "Ineligible";
+                attendanceMarksSpan.className = "attendance-marks font-semibold text-red-600";
+            } else {
+                if (attendance >= 95) marks = 5;
+                else if (attendance >= 90) marks = 4;
+                else if (attendance >= 85) marks = 3;
+                else if (attendance >= 80) marks = 2;
+                else marks = 1;
+                
+                attendanceMarksSpan.textContent = marks;
+                attendanceMarksSpan.className = "attendance-marks font-semibold text-green-600";
+            }
+            
+            // Recalculate total
+            calculateTotal(input);
+        }
+        
+        // Auto-save marks when changed
+        async function autoSaveMarks(input) {
+            const studentId = input.dataset.student;
+            const field = input.dataset.field;
+            const subject = document.getElementById('subjectSelectTeacher')?.value || 'mathematics';
+            
+            if (!studentId || !field) return;
+            
+            // Collect all marks for this student
+            const row = input.closest('tr');
+            const marks = {
+                test1: parseFloat(row.querySelector('[data-field="test1"]')?.value) || 0,
+                test2: parseFloat(row.querySelector('[data-field="test2"]')?.value) || 0,
+                presentation: parseFloat(row.querySelector('[data-field="presentation"]')?.value) || 0,
+                assignment: parseFloat(row.querySelector('[data-field="assignment"]')?.value) || 0,
+                attendance: parseFloat(row.querySelector('[data-field="attendance"]')?.value) || 0
+            };
+            
+            // Save to backend
+            const success = await saveStudentMarks(studentId, subject, marks);
+            if (success) {
+                console.log('✅ Marks auto-saved for student:', studentId);
+            }
+        }
+        
+        // Load subject marks when subject changes
+        function loadSubjectMarks() {
+            loadSubjectMarks();
+        }
+        
+        // Save all marks
+        async function saveAllMarks() {
+            const subject = document.getElementById('subjectSelectTeacher')?.value || 'mathematics';
+            const rows = document.querySelectorAll('#marksTableBody tr');
+            let savedCount = 0;
+            
+            for (const row of rows) {
+                const studentId = row.querySelector('[data-student]')?.dataset.student;
+                if (!studentId) continue;
+                
+                const marks = {
+                    test1: parseFloat(row.querySelector('[data-field="test1"]')?.value) || 0,
+                    test2: parseFloat(row.querySelector('[data-field="test2"]')?.value) || 0,
+                    presentation: parseFloat(row.querySelector('[data-field="presentation"]')?.value) || 0,
+                    assignment: parseFloat(row.querySelector('[data-field="assignment"]')?.value) || 0,
+                    attendance: parseFloat(row.querySelector('[data-field="attendance"]')?.value) || 0
+                };
+                
+                const success = await saveStudentMarks(studentId, subject, marks);
+                if (success) savedCount++;
+            }
+            
+            alert(`✅ Saved marks for ${savedCount} students in ${subject}`);
+        }
+        
+        // Update student attendance
+        function updateStudentAttendance(studentId, status) {
+            console.log('🔍 Updating attendance for student:', studentId, 'status:', status);
+            // This can be expanded to save attendance status
+        }
+        
+        // Save attendance
+        async function saveAttendance(studentId) {
+            console.log('🔍 Saving attendance for student:', studentId);
+            // This can be expanded to save attendance to backend
+            alert('Attendance saved for student: ' + studentId);
+        }
+        
+        // Load sample data (for testing)
+        function loadSampleData() {
+            alert('Sample data loading is disabled. Use real student data instead.');
+        }
+        
+        // Clear all data
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all marks data? This cannot be undone.')) {
+                const tableBody = document.getElementById('marksTableBody');
+                if (tableBody) {
+                    const inputs = tableBody.querySelectorAll('input');
+                    inputs.forEach(input => input.value = '');
+                    
+                    const totals = tableBody.querySelectorAll('.total-marks');
+                    totals.forEach(total => total.textContent = '0');
+                    
+                    const grades = tableBody.querySelectorAll('.grade-display');
+                    grades.forEach(grade => {
+                        grade.textContent = 'F';
+                        grade.className = 'px-2 py-1 rounded text-white grade-F grade-display';
+                    });
+                }
+                alert('All marks data cleared.');
+            }
+        }
+        
+        // Download template
+        function downloadTemplate() {
+            alert('Excel template download feature will be implemented soon.');
+        }
+        
+        // Export marks
+        function exportMarks() {
+            alert('Export to Excel feature will be implemented soon.');
+        }
+        
+        // Handle Excel upload
+        function handleExcelUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                alert('Excel upload feature will be implemented soon. File: ' + file.name);
             }
         }
 

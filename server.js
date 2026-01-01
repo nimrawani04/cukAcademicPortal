@@ -38,6 +38,14 @@ app.use('/api/auth', authRoutes);
 const adminRoutes = require('./server/routes/adminRoutes');
 app.use('/api/admin', adminRoutes);
 
+// Import and use student routes
+const studentRoutes = require('./server/routes/studentRoutes');
+app.use('/api/student', studentRoutes);
+
+// Import and use teacher routes
+const teacherRoutes = require('./server/routes/teacherRoutes');
+app.use('/api/teacher', teacherRoutes);
+
 // Start server
 const startServer = async () => {
     try {

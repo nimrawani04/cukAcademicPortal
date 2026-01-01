@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: green;
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            color: red;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #log {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👨‍🏫 Teacher System Test</h1>
+        
+        <div class="test-section">
+            <h3>1. Teacher Login</h3>
+            <input type="email" id="teacherEmail" placeholder="teacher@example.com" value="teacher@cukashmir.ac.in">
+            <input type="password" id="teacherPassword" placeholder="password" value="teacher123">
+            <button onclick="testTeacherLogin()">Login as Teacher</button>
+            <div id="teacherLoginResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Students Management</h3>
+            <button onclick="loadStudents()" id="loadStudentsBtn" disabled>Load Students List</button>
+            <div id="studentsResult"></div>
+            <div id="studentsTable"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Marks Management</h3>
+            <select id="subjectSelect" disabled>
+                <option value="mathematics">Mathematics</option>
+                <option value="physics">Physics</option>
+                <option value="chemistry">Chemistry</option>
+                <option value="computer-science">Computer Science</option>
+            </select>
+            <button onclick="loadSubjectMarks()" id="loadMarksBtn" disabled>Load Subject Marks</button>
+            <div id="marksResult"></div>
+            <div id="marksTable"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test Marks Update</h3>
+            <input type="text" id="testStudentId" placeholder="Student ID" readonly>
+            <input type="number" id="testMarks" placeholder="Test 1 Marks (0-15)" min="0" max="15">
+            <button onclick="updateTestMarks()" id="updateMarksBtn" disabled>Update Marks</button>
+            <div id="updateResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Debug Log</h3>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        console.log("🔍 Teacher system test loaded!");
+        
+        const BACKEND_URL = 'https://cukacademicportal.onrender.com';
+        let teacherToken = null;
+        let currentStudents = [];
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function showResult(containerId, message, isSuccess = true) {
+            const container = document.getElementById(containerId);
+            const className = isSuccess ? 'success' : 'error';
+            container.innerHTML += `<div class="${className}">${message}</div>`;
+        }
+        
+        async function testTeacherLogin() {
+            const email = document.getElementById('teacherEmail').value;
+            const password = document.getElementById('teacherPassword').value;
+            
+            log(`Testing teacher login for: ${email}`);
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                log(`Teacher login response: ${JSON.stringify(data)}`);
+                
+                if (data.success && data.data.user.role === 'teacher') {
+                    teacherToken = data.data.token;
+                    showResult('teacherLoginResult', '✅ Teacher login successful!', true);
+                    
+                    // Enable other buttons
+                    document.getElementById('loadStudentsBtn').disabled = false;
+                    document.getElementById('subjectSelect').disabled = false;
+                    document.getElementById('loadMarksBtn').disabled = false;
+                    document.getElementById('updateMarksBtn').disabled = false;
+                    
+                    log(`Teacher token received: ${teacherToken.substring(0, 20)}...`);
+                } else {
+                    showResult('teacherLoginResult', `❌ Teacher login failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                log(`Teacher login error: ${error.message}`);
+                showResult('teacherLoginResult', `❌ Teacher login error: ${error.message}`, false);
+            }
+        }
+        
+        async function loadStudents() {
+            if (!teacherToken) {
+                alert('Please login as teacher first');
+                return;
+            }
+            
+            log('Loading students list...');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/teacher/students`, {
+                    headers: {
+                        'Authorization': `Bearer ${teacherToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                log(`Students response: ${JSON.stringify(data)}`);
+                
+                if (data.success) {
+                    currentStudents = data.data;
+                    showResult('studentsResult', `✅ Loaded ${data.data.length} students`, true);
+                    displayStudentsTable(data.data);
+                } else {
+                    showResult('studentsResult', `❌ Failed to load students: ${data.message}`, false);
+                }
+                
+            } catch (error) {
+                log(`Load students error: ${error.message}`);
+                showResult('studentsResult', `❌ Load students error: ${error.message}`, false);
+            }
+        }
+        
+        function displayStudentsTable(students) {
+            const container = document.getElementById('studentsTable');
+            
+            if (students.length === 0) {
+                container.innerHTML = '<p>No students found. Students will appear here after they register.</p>';
+                return;
+            }
+            
+            let tableHTML = `
+                <table>
+                    <tr>
+                        <th>Roll Number</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Course</th>
+                        <th>Actions</th>
+                    </tr>
+            `;
+            
+            students.forEach(student => {
+                tableHTML += `
+                    <tr>
+                        <td>${student.rollNumber}</td>
+                        <td>${student.name}</td>
+                        <td>${student.email}</td>
+                        <td>${student.course}</td>
+                        <td>
+                            <button onclick="selectStudent('${student.id}', '${student.name}')">Select for Test</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += '</table>';
+            container.innerHTML = tableHTML;
+        }
+        
+        function selectStudent(studentId, studentName) {
+            document.getElementById('testStudentId').value = studentId;
+            showResult('studentsResult', `✅ Selected student: ${studentName}`, true);
+        }
+        
+        async function loadSubjectMarks() {
+            if (!teacherToken) {
+                alert('Please login as teacher first');
+                return;
+            }
+            
+            const subject = document.getElementById('subjectSelect').value;
+            log(`Loading marks for subject: ${subject}`);
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/teacher/marks/subject/${subject}`, {
+                    headers: {
+                        'Authorization': `Bearer ${teacherToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                log(`Subject marks response: ${JSON.stringify(data)}`);
+                
+                if (data.success) {
+                    showResult('marksResult', `✅ Loaded marks for ${data.data.length} students in ${subject}`, true);
+                    displayMarksTable(data.data, subject);
+                } else {
+                    showResult('marksResult', `❌ Failed to load marks: ${data.message}`, false);
+                }
+                
+            } catch (error) {
+                log(`Load marks error: ${error.message}`);
+                showResult('marksResult', `❌ Load marks error: ${error.message}`, false);
+            }
+        }
+        
+        function displayMarksTable(marksData, subject) {
+            const container = document.getElementById('marksTable');
+            
+            if (marksData.length === 0) {
+                container.innerHTML = '<p>No students found for marks management.</p>';
+                return;
+            }
+            
+            let tableHTML = `
+                <h4>Marks for ${subject.charAt(0).toUpperCase() + subject.slice(1)}</h4>
+                <table>
+                    <tr>
+                        <th>Roll Number</th>
+                        <th>Name</th>
+                        <th>Test 1</th>
+                        <th>Test 2</th>
+                        <th>Presentation</th>
+                        <th>Assignment</th>
+                        <th>Total</th>
+                        <th>Grade</th>
+                    </tr>
+            `;
+            
+            marksData.forEach(student => {
+                tableHTML += `
+                    <tr>
+                        <td>${student.rollNumber}</td>
+                        <td>${student.studentName}</td>
+                        <td>${student.marks.test1 || 0}</td>
+                        <td>${student.marks.test2 || 0}</td>
+                        <td>${student.marks.presentation || 0}</td>
+                        <td>${student.marks.assignment || 0}</td>
+                        <td>${student.total || 0}</td>
+                        <td>${student.grade || '-'}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += '</table>';
+            container.innerHTML = tableHTML;
+        }
+        
+        async function updateTestMarks() {
+            const studentId = document.getElementById('testStudentId').value;
+            const testMarks = document.getElementById('testMarks').value;
+            const subject = document.getElementById('subjectSelect').value;
+            
+            if (!studentId || !testMarks) {
+                alert('Please select a student and enter marks');
+                return;
+            }
+            
+            log(`Updating marks for student: ${studentId}, subject: ${subject}, test1: ${testMarks}`);
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/teacher/marks`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${teacherToken}`
+                    },
+                    body: JSON.stringify({
+                        studentId,
+                        subject,
+                        marks: {
+                            test1: parseFloat(testMarks),
+                            test2: 0,
+                            presentation: 0,
+                            assignment: 0,
+                            attendance: 0
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                log(`Update marks response: ${JSON.stringify(data)}`);
+                
+                if (data.success) {
+                    showResult('updateResult', `✅ Marks updated successfully! Grade: ${data.data.grade}`, true);
+                    document.getElementById('testMarks').value = '';
+                } else {
+                    showResult('updateResult', `❌ Failed to update marks: ${data.message}`, false);
+                }
+                
+            } catch (error) {
+                log(`Update marks error: ${error.message}`);
+                showResult('updateResult', `❌ Update marks error: ${error.message}`, false);
+            }
+        }
+    </script>
+</body>
+</html>

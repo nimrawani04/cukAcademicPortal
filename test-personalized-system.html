@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalized System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: green;
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            color: red;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #log {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .data-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Personalized Academic System Test</h1>
+        
+        <div class="test-section">
+            <h3>1. Student Login & Data Test</h3>
+            <input type="email" id="studentEmail" placeholder="student@example.com" value="aarav.sharma@student.cukashmir.ac.in">
+            <input type="password" id="studentPassword" placeholder="password" value="student123">
+            <button onclick="testStudentLogin()">Login as Student</button>
+            <button onclick="testStudentData()" id="studentDataBtn" disabled>Load Student Data</button>
+            <div id="studentResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Student Data Display</h3>
+            <div id="studentDataDisplay"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Teacher Login & Data Test</h3>
+            <input type="email" id="teacherEmail" placeholder="teacher@example.com" value="teacher@cukashmir.ac.in">
+            <input type="password" id="teacherPassword" placeholder="password" value="teacher123">
+            <button onclick="testTeacherLogin()">Login as Teacher</button>
+            <button onclick="testTeacherData()" id="teacherDataBtn" disabled>Load Teacher Data</button>
+            <div id="teacherResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Debug Log</h3>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        console.log("🔍 Personalized system test loaded!");
+        
+        const BACKEND_URL = 'https://cukacademicportal.onrender.com';
+        let studentToken = null;
+        let teacherToken = null;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function showResult(containerId, message, isSuccess = true) {
+            const container = document.getElementById(containerId);
+            const className = isSuccess ? 'success' : 'error';
+            container.innerHTML += `<div class="${className}">${message}</div>`;
+        }
+        
+        async function testStudentLogin() {
+            const email = document.getElementById('studentEmail').value;
+            const password = document.getElementById('studentPassword').value;
+            
+            log(`Testing student login for: ${email}`);
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                log(`Student login response: ${JSON.stringify(data)}`);
+                
+                if (data.success && data.data.user.role === 'student') {
+                    studentToken = data.data.token;
+                    showResult('studentResults', '✅ Student login successful!', true);
+                    document.getElementById('studentDataBtn').disabled = false;
+                    log(`Student token received: ${studentToken.substring(0, 20)}...`);
+                } else {
+                    showResult('studentResults', `❌ Student login failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                log(`Student login error: ${error.message}`);
+                showResult('studentResults', `❌ Student login error: ${error.message}`, false);
+            }
+        }
+        
+        async function testStudentData() {
+            if (!studentToken) {
+                alert('Please login as student first');
+                return;
+            }
+            
+            log('Testing student personalized data APIs...');
+            
+            try {
+                // Test student dashboard
+                const dashboardResponse = await fetch(`${BACKEND_URL}/api/student/dashboard`, {
+                    headers: {
+                        'Authorization': `Bearer ${studentToken}`
+                    }
+                });
+                
+                if (dashboardResponse.ok) {
+                    const dashboardData = await response.json();
+                    log(`Dashboard data: ${JSON.stringify(dashboardData)}`);
+                    showResult('studentResults', '✅ Dashboard API working!', true);
+                    displayStudentData('dashboard', dashboardData.data);
+                }
+                
+                // Test student attendance
+                const attendanceResponse = await fetch(`${BACKEND_URL}/api/student/attendance`, {
+                    headers: {
+                        'Authorization': `Bearer ${studentToken}`
+                    }
+                });
+                
+                if (attendanceResponse.ok) {
+                    const attendanceData = await attendanceResponse.json();
+                    log(`Attendance data: ${JSON.stringify(attendanceData)}`);
+                    showResult('studentResults', '✅ Attendance API working!', true);
+                    displayStudentData('attendance', attendanceData.data);
+                }
+                
+                // Test student marks
+                const marksResponse = await fetch(`${BACKEND_URL}/api/student/marks`, {
+                    headers: {
+                        'Authorization': `Bearer ${studentToken}`
+                    }
+                });
+                
+                if (marksResponse.ok) {
+                    const marksData = await marksResponse.json();
+                    log(`Marks data: ${JSON.stringify(marksData)}`);
+                    showResult('studentResults', '✅ Marks API working!', true);
+                    displayStudentData('marks', marksData.data);
+                }
+                
+            } catch (error) {
+                log(`Student data error: ${error.message}`);
+                showResult('studentResults', `❌ Student data error: ${error.message}`, false);
+            }
+        }
+        
+        function displayStudentData(type, data) {
+            const container = document.getElementById('studentDataDisplay');
+            
+            if (type === 'dashboard') {
+                container.innerHTML += `
+                    <div class="data-display">
+                        <h4>📊 Dashboard Summary</h4>
+                        <p><strong>Name:</strong> ${data.student.name}</p>
+                        <p><strong>Roll Number:</strong> ${data.student.rollNumber}</p>
+                        <p><strong>Course:</strong> ${data.student.course}</p>
+                        <p><strong>Average Attendance:</strong> ${data.summary.averageAttendance}%</p>
+                        <p><strong>Average Marks:</strong> ${data.summary.averageMarks}%</p>
+                    </div>
+                `;
+            } else if (type === 'attendance') {
+                let tableHTML = `
+                    <div class="data-display">
+                        <h4>📅 Attendance Records</h4>
+                        <table>
+                            <tr><th>Subject</th><th>Attended</th><th>Total</th><th>Percentage</th></tr>
+                `;
+                
+                data.forEach(record => {
+                    tableHTML += `
+                        <tr>
+                            <td>${record.subject}</td>
+                            <td>${record.attendedClasses}</td>
+                            <td>${record.totalClasses}</td>
+                            <td>${record.percentage.toFixed(1)}%</td>
+                        </tr>
+                    `;
+                });
+                
+                tableHTML += `</table></div>`;
+                container.innerHTML += tableHTML;
+            } else if (type === 'marks') {
+                let tableHTML = `
+                    <div class="data-display">
+                        <h4>📝 Marks Records</h4>
+                        <table>
+                            <tr><th>Subject</th><th>Exam Type</th><th>Marks</th><th>Total</th><th>Grade</th></tr>
+                `;
+                
+                data.forEach(record => {
+                    tableHTML += `
+                        <tr>
+                            <td>${record.subject}</td>
+                            <td>${record.examType}</td>
+                            <td>${record.marksObtained}</td>
+                            <td>${record.totalMarks}</td>
+                            <td>${record.grade}</td>
+                        </tr>
+                    `;
+                });
+                
+                tableHTML += `</table></div>`;
+                container.innerHTML += tableHTML;
+            }
+        }
+        
+        async function testTeacherLogin() {
+            const email = document.getElementById('teacherEmail').value;
+            const password = document.getElementById('teacherPassword').value;
+            
+            log(`Testing teacher login for: ${email}`);
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                log(`Teacher login response: ${JSON.stringify(data)}`);
+                
+                if (data.success && data.data.user.role === 'teacher') {
+                    teacherToken = data.data.token;
+                    showResult('teacherResults', '✅ Teacher login successful!', true);
+                    document.getElementById('teacherDataBtn').disabled = false;
+                } else {
+                    showResult('teacherResults', `❌ Teacher login failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                log(`Teacher login error: ${error.message}`);
+                showResult('teacherResults', `❌ Teacher login error: ${error.message}`, false);
+            }
+        }
+        
+        async function testTeacherData() {
+            if (!teacherToken) {
+                alert('Please login as teacher first');
+                return;
+            }
+            
+            log('Testing teacher data APIs...');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/teacher/students`, {
+                    headers: {
+                        'Authorization': `Bearer ${teacherToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                log(`Teacher students data: ${JSON.stringify(data)}`);
+                
+                if (data.success) {
+                    showResult('teacherResults', `✅ Teacher can see ${data.data.length} students`, true);
+                } else {
+                    showResult('teacherResults', `❌ Teacher data failed: ${data.message}`, false);
+                }
+                
+            } catch (error) {
+                log(`Teacher data error: ${error.message}`);
+                showResult('teacherResults', `❌ Teacher data error: ${error.message}`, false);
+            }
+        }
+    </script>
+</body>
+</html>
