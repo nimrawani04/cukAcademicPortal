@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #c82333;
+        }
+        .success {
+            color: green;
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            color: red;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #log {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Admin System Test</h1>
+        
+        <div class="test-section">
+            <h3>1. Test Admin Login</h3>
+            <input type="email" id="adminEmail" placeholder="admin@cukashmir.ac.in" value="admin@cukashmir.ac.in">
+            <input type="password" id="adminPassword" placeholder="admin123" value="admin123">
+            <button onclick="testAdminLogin()">Test Admin Login</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test Admin APIs (Login Required)</h3>
+            <button onclick="testAdminStats()">Test Stats API</button>
+            <button onclick="testStudentsAPI()">Test Students API</button>
+            <button onclick="testTeachersAPI()">Test Teachers API</button>
+            <div id="apiResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Debug Log</h3>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        console.log("🔍 Admin test page loaded!");
+        
+        const BACKEND_URL = 'https://cukacademicportal.onrender.com';
+        let adminToken = null;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function showResult(containerId, message, isSuccess = true) {
+            const container = document.getElementById(containerId);
+            const className = isSuccess ? 'success' : 'error';
+            container.innerHTML += `<div class="${className}">${message}</div>`;
+        }
+        
+        async function testAdminLogin() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            log(`Testing admin login for: ${email}`);
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                log(`Admin login response: ${JSON.stringify(data)}`);
+                
+                if (data.success) {
+                    adminToken = data.data.token;
+                    showResult('loginResult', '✅ Admin login successful!', true);
+                    log(`Admin token received: ${adminToken.substring(0, 20)}...`);
+                } else {
+                    showResult('loginResult', `❌ Admin login failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                log(`Admin login error: ${error.message}`);
+                showResult('loginResult', `❌ Admin login error: ${error.message}`, false);
+            }
+        }
+        
+        async function testAdminStats() {
+            if (!adminToken) {
+                alert('Please login first');
+                return;
+            }
+            
+            log('Testing admin stats API...');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/stats`, {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                log(`Stats response: ${JSON.stringify(data)}`);
+                
+                if (data.success) {
+                    showResult('apiResults', '✅ Stats API working!', true);
+                } else {
+                    showResult('apiResults', `❌ Stats API failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                log(`Stats API error: ${error.message}`);
+                showResult('apiResults', `❌ Stats API error: ${error.message}`, false);
+            }
+        }
+        
+        async function testStudentsAPI() {
+            if (!adminToken) {
+                alert('Please login first');
+                return;
+            }
+            
+            log('Testing students API...');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/students`, {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                log(`Students response: ${JSON.stringify(data)}`);
+                
+                if (data.success) {
+                    showResult('apiResults', `✅ Students API working! Found ${data.data.length} students`, true);
+                } else {
+                    showResult('apiResults', `❌ Students API failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                log(`Students API error: ${error.message}`);
+                showResult('apiResults', `❌ Students API error: ${error.message}`, false);
+            }
+        }
+        
+        async function testTeachersAPI() {
+            if (!adminToken) {
+                alert('Please login first');
+                return;
+            }
+            
+            log('Testing teachers API...');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/teachers`, {
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                log(`Teachers response: ${JSON.stringify(data)}`);
+                
+                if (data.success) {
+                    showResult('apiResults', `✅ Teachers API working! Found ${data.data.length} teachers`, true);
+                } else {
+                    showResult('apiResults', `❌ Teachers API failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                log(`Teachers API error: ${error.message}`);
+                showResult('apiResults', `❌ Teachers API error: ${error.message}`, false);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -468,6 +468,11 @@
     </div>
 
     <script>
+        console.log("🔍 Admin dashboard loaded successfully!");
+        
+        // BACKEND CONFIGURATION - Your actual Render backend URL
+        const BACKEND_URL = 'https://cukacademicportal.onrender.com';
+        
         // Global variables
         let adminToken = null;
         let adminUser = null;
@@ -521,7 +526,9 @@
         // Load dashboard statistics
         async function loadDashboardStats() {
             try {
-                const response = await fetch('/api/admin/stats', {
+                console.log('🔍 Loading dashboard stats from:', `${BACKEND_URL}/api/admin/stats`);
+                
+                const response = await fetch(`${BACKEND_URL}/api/admin/stats`, {
                     headers: {
                         'Authorization': `Bearer ${adminToken}`
                     }
@@ -554,7 +561,9 @@
             noDataEl.style.display = 'none';
             
             try {
-                const response = await fetch('/api/admin/students', {
+                console.log('🔍 Loading students from:', `${BACKEND_URL}/api/admin/students`);
+                
+                const response = await fetch(`${BACKEND_URL}/api/admin/students`, {
                     headers: {
                         'Authorization': `Bearer ${adminToken}`
                     }
@@ -609,7 +618,9 @@
             noDataEl.style.display = 'none';
             
             try {
-                const response = await fetch('/api/admin/teachers', {
+                console.log('🔍 Loading teachers from:', `${BACKEND_URL}/api/admin/teachers`);
+                
+                const response = await fetch(`${BACKEND_URL}/api/admin/teachers`, {
                     headers: {
                         'Authorization': `Bearer ${adminToken}`
                     }
@@ -661,7 +672,9 @@
             }
             
             try {
-                const response = await fetch(`/api/admin/approve-student/${studentId}`, {
+                console.log('🔍 Approving student:', studentId);
+                
+                const response = await fetch(`${BACKEND_URL}/api/admin/approve-student/${studentId}`, {
                     method: 'PATCH',
                     headers: {
                         'Authorization': `Bearer ${adminToken}`
@@ -689,7 +702,9 @@
             }
             
             try {
-                const response = await fetch(`/api/admin/user/${userId}`, {
+                console.log('🔍 Deleting user:', userId);
+                
+                const response = await fetch(`${BACKEND_URL}/api/admin/user/${userId}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${adminToken}`
@@ -753,7 +768,9 @@
             createBtn.textContent = 'Creating...';
             
             try {
-                const response = await fetch('/api/admin/create-teacher', {
+                console.log('🔍 Creating teacher with data:', { name, email });
+                
+                const response = await fetch(`${BACKEND_URL}/api/admin/create-teacher`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

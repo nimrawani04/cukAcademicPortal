@@ -183,6 +183,11 @@
     </div>
 
     <script>
+        console.log("🔍 Admin login page loaded successfully!");
+        
+        // BACKEND CONFIGURATION - Your actual Render backend URL
+        const BACKEND_URL = 'https://cukacademicportal.onrender.com';
+        
         // Admin login functionality
         document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -207,8 +212,9 @@
             
             try {
                 console.log('🔍 Attempting admin login for:', email);
+                console.log('🔍 Making request to:', `${BACKEND_URL}/api/admin/login`);
                 
-                const response = await fetch('/api/admin/login', {
+                const response = await fetch(`${BACKEND_URL}/api/admin/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
