@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUK Faculty Dashboard - Academic Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-active {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: #ffffff;
+        }
+        .faculty-card {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #059669;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status-present { background-color: #10b981; color: #065f46; }
+        .status-absent { background-color: #ef4444; color: #991b1b; }
+        .grade-A { background-color: #10b981; color: #ffffff; }
+        .grade-B { background-color: #3b82f6; color: #ffffff; }
+        .grade-C { background-color: #f59e0b; color: #ffffff; }
+        .grade-D { background-color: #ef4444; color: #ffffff; }
+        .grade-F { background-color: #6b7280; color: #ffffff; }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-green-50 to-green-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-green-600">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center shadow-lg bg-green-600">
+                        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+                            <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <h1 class="text-2xl font-bold text-gray-900">CUK Faculty Dashboard</h1>
+                        <p class="text-gray-600">Academic Control & Management</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="facultyInfo" class="text-right hidden">
+                        <p class="text-sm font-medium text-gray-900" id="facultyName"></p>
+                        <p class="text-xs text-green-600 font-semibold" id="facultyDesignation"></p>
+                    </div>
+                    <button onclick="logout()" id="logoutBtn" class="px-6 py-3 rounded-lg font-semibold transition-all duration-300 bg-green-600 text-white hover:bg-green-700 hidden">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>  
+  <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
+            <div class="loading-spinner"></div>
+            <span class="text-gray-700">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Faculty Login Modal -->
+    <div id="facultyLoginModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="faculty-card rounded-2xl p-10 max-w-lg w-full mx-4">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-green-700 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+                        <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold text-white">Faculty Login</h2>
+                <p class="text-gray-200 mt-3 font-medium">Academic Control Access</p>
+                <div class="w-16 h-1 bg-gray-400 rounded-full mx-auto mt-2"></div>
+            </div>
+            
+            <form id="facultyLoginForm" onsubmit="handleFacultyLogin(event)">
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-white mb-3">Email Address</label>
+                    <input type="email" id="facultyEmail" class="w-full px-5 py-4 rounded-xl font-medium text-slate-800" placeholder="Enter faculty email" required>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-white mb-3">Password</label>
+                    <input type="password" id="facultyPassword" class="w-full px-5 py-4 rounded-xl font-medium text-slate-800" placeholder="Enter password" required>
+                </div>
+                
+                <button type="submit" class="w-full bg-green-700 hover:bg-green-800 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300">
+                    Faculty Login
+                </button>
+            </form>
+            
+            <div class="mt-8 p-6 bg-green-800 bg-opacity-30 rounded-xl border border-green-400">
+                <h4 class="font-bold text-sm text-white mb-3">Faculty Credentials</h4>
+                <div class="text-sm text-gray-200 font-medium space-y-1">
+                    <div>Professor: <code class="bg-green-700 px-2 py-1 rounded">professor@cuk.com / prof123</code></div>
+                    <div>Assistant Prof: <code class="bg-green-700 px-2 py-1 rounded">demo@faculty.com / demo123</code></div>
+                    <div>Lecturer: <code class="bg-green-700 px-2 py-1 rounded">lecturer@cuk.com / lect123</code></div>
+                    <div>Guest Faculty: <code class="bg-green-700 px-2 py-1 rounded">guest@cuk.com / guest123</code></div>
+                </div>
+            </div>
+        </div>
+    </div>    <!-
+- Main Faculty Dashboard -->
+    <div id="facultyDashboard" class="hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Faculty Navigation -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6">👨‍🏫 Faculty Control Panel</h2>
+                
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <button onclick="showFacultyTab('students')" id="facultyStudentsTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 tab-active">
+                        My Students
+                    </button>
+                    <button onclick="showFacultyTab('attendance')" id="facultyAttendanceTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Attendance
+                    </button>
+                    <button onclick="showFacultyTab('marks')" id="facultyMarksTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Marks & Grades
+                    </button>
+                    <button onclick="showFacultyTab('notices')" id="facultyNoticesTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Notices
+                    </button>
+                    <button onclick="showFacultyTab('resources')" id="facultyResourcesTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Resources
+                    </button>
+                    <button onclick="showFacultyTab('leaves')" id="facultyLeavesTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Leave Applications
+                    </button>
+                </div>
+
+                <!-- My Students Tab -->
+                <div id="facultyStudents" class="faculty-content">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">👨‍🎓 My Assigned Students</h3>
+                        <div id="assignedStudentsContainer">
+                            <!-- Students will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Management Tab -->
+                <div id="facultyAttendance" class="faculty-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-semibold text-gray-900">📅 Attendance Management</h3>
+                            <button onclick="showMarkAttendanceModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                ➕ Mark Attendance
+                            </button>
+                        </div>
+                        <div id="attendanceManagementContainer">
+                            <!-- Attendance management will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Marks & Grades Tab -->
+                <div id="facultyMarks" class="faculty-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-semibold text-gray-900">📊 Marks & Grades Management</h3>
+                            <button onclick="showAddMarksModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                ➕ Add Marks
+                            </button>
+                        </div>
+                        <div id="marksManagementContainer">
+                            <!-- Marks management will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notices Tab -->
+                <div id="facultyNotices" class="faculty-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-semibold text-gray-900">📢 Notice Management</h3>
+                            <button onclick="showCreateNoticeModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                ➕ Create Notice
+                            </button>
+                        </div>
+                        <div id="noticeManagementContainer">
+                            <!-- Notice management will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resources Tab -->
+                <div id="facultyResources" class="faculty-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-semibold text-gray-900">📚 Resource Management</h3>
+                            <button onclick="showUploadResourceModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                ➕ Upload Resource
+                            </button>
+                        </div>
+                        <div id="resourceManagementContainer">
+                            <!-- Resource management will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leave Applications Tab -->
+                <div id="facultyLeaves" class="faculty-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">🏖️ Student Leave Applications</h3>
+                        <div id="leaveApplicationsContainer">
+                            <!-- Leave applications will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    <!--
+ Mark Attendance Modal -->
+    <div id="markAttendanceModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">📅 Mark Attendance</h3>
+                <button onclick="closeMarkAttendanceModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="markAttendanceForm" onsubmit="handleMarkAttendance(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Student *</label>
+                        <select id="attendanceStudentId" class="w-full px-3 py-2 border rounded-lg" required>
+                            <option value="">Select Student</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
+                        <input type="text" id="attendanceSubject" class="w-full px-3 py-2 border rounded-lg" required>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date *</label>
+                        <input type="date" id="attendanceDate" class="w-full px-3 py-2 border rounded-lg" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                        <select id="attendanceStatus" class="w-full px-3 py-2 border rounded-lg" required>
+                            <option value="present">Present</option>
+                            <option value="absent">Absent</option>
+                            <option value="late">Late</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Class Type</label>
+                        <select id="attendanceClassType" class="w-full px-3 py-2 border rounded-lg">
+                            <option value="lecture">Lecture</option>
+                            <option value="practical">Practical</option>
+                            <option value="tutorial">Tutorial</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Duration (minutes)</label>
+                        <input type="number" id="attendanceDuration" class="w-full px-3 py-2 border rounded-lg" value="60">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
+                    <textarea id="attendanceRemarks" class="w-full px-3 py-2 border rounded-lg" rows="3" placeholder="Optional remarks..."></textarea>
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button type="submit" class="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-bold hover:bg-green-700">
+                        Mark Attendance
+                    </button>
+                    <button type="button" onclick="closeMarkAttendanceModal()" class="flex-1 bg-gray-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-gray-600">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Marks Modal -->
+    <div id="addMarksModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">📊 Add/Edit Marks</h3>
+                <button onclick="closeAddMarksModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="addMarksForm" onsubmit="handleAddMarks(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Student *</label>
+                        <select id="marksStudentId" class="w-full px-3 py-2 border rounded-lg" required>
+                            <option value="">Select Student</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
+                        <input type="text" id="marksSubject" class="w-full px-3 py-2 border rounded-lg" required>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Exam Type *</label>
+                        <select id="marksExamType" class="w-full px-3 py-2 border rounded-lg" required>
+                            <option value="test1">Test 1</option>
+                            <option value="test2">Test 2</option>
+                            <option value="midterm">Mid-term</option>
+                            <option value="final">Final Exam</option>
+                            <option value="assignment">Assignment</option>
+                            <option value="presentation">Presentation</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Semester</label>
+                        <select id="marksSemester" class="w-full px-3 py-2 border rounded-lg">
+                            <option value="1">1st Semester</option>
+                            <option value="2">2nd Semester</option>
+                            <option value="3">3rd Semester</option>
+                            <option value="4">4th Semester</option>
+                            <option value="5">5th Semester</option>
+                            <option value="6">6th Semester</option>
+                            <option value="7">7th Semester</option>
+                            <option value="8">8th Semester</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Marks Obtained *</label>
+                        <input type="number" id="marksObtained" class="w-full px-3 py-2 border rounded-lg" min="0" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Maximum Marks *</label>
+                        <input type="number" id="marksMaximum" class="w-full px-3 py-2 border rounded-lg" min="1" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Credits</label>
+                        <input type="number" id="marksCredits" class="w-full px-3 py-2 border rounded-lg" min="1" value="3">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
+                    <textarea id="marksRemarks" class="w-full px-3 py-2 border rounded-lg" rows="3" placeholder="Optional remarks..."></textarea>
+                </div>
+                
+                <div class="flex items-center mb-4">
+                    <input type="checkbox" id="marksPublished" class="mr-2">
+                    <label for="marksPublished" class="text-sm text-gray-700">Publish marks to student</label>
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button type="submit" class="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-bold hover:bg-green-700">
+                        Save Marks
+                    </button>
+                    <button type="button" onclick="closeAddMarksModal()" class="flex-1 bg-gray-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-gray-600">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>   
+ <!-- Create Notice Modal -->
+    <div id="createNoticeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">📢 Create Notice</h3>
+                <button onclick="closeCreateNoticeModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="createNoticeForm" onsubmit="handleCreateNotice(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                        <input type="text" id="noticeTitle" class="w-full px-3 py-2 border rounded-lg" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Priority *</label>
+                        <select id="noticePriority" class="w-full px-3 py-2 border rounded-lg" required>
+                            <option value="normal">Normal</option>
+                            <option value="important">Important</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <select id="noticeCategory" class="w-full px-3 py-2 border rounded-lg">
+                            <option value="academic">Academic</option>
+                            <option value="examination">Examination</option>
+                            <option value="event">Event</option>
+                            <option value="general">General</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
+                        <input type="date" id="noticeExpiry" class="w-full px-3 py-2 border rounded-lg">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Content *</label>
+                    <textarea id="noticeContent" class="w-full px-3 py-2 border rounded-lg" rows="6" placeholder="Enter notice content..." required></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Target Audience</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="radio" name="noticeTarget" value="all" class="mr-2" checked>
+                            <span>All Students</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="noticeTarget" value="myStudents" class="mr-2">
+                            <span>My Students Only</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="noticeTarget" value="department" class="mr-2">
+                            <span>My Department</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button type="submit" class="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-bold hover:bg-green-700">
+                        Publish Notice
+                    </button>
+                    <button type="button" onclick="closeCreateNoticeModal()" class="flex-1 bg-gray-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-gray-600">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Upload Resource Modal -->
+    <div id="uploadResourceModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">📚 Upload Resource</h3>
+                <button onclick="closeUploadResourceModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="uploadResourceForm" onsubmit="handleUploadResource(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                        <input type="text" id="resourceTitle" class="w-full px-3 py-2 border rounded-lg" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
+                        <input type="text" id="resourceSubject" class="w-full px-3 py-2 border rounded-lg" required>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Resource Type</label>
+                        <select id="resourceType" class="w-full px-3 py-2 border rounded-lg">
+                            <option value="document">Document</option>
+                            <option value="presentation">Presentation</option>
+                            <option value="video">Video</option>
+                            <option value="assignment">Assignment</option>
+                            <option value="reference">Reference Material</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Semester</label>
+                        <select id="resourceSemester" class="w-full px-3 py-2 border rounded-lg">
+                            <option value="1">1st Semester</option>
+                            <option value="2">2nd Semester</option>
+                            <option value="3">3rd Semester</option>
+                            <option value="4">4th Semester</option>
+                            <option value="5">5th Semester</option>
+                            <option value="6">6th Semester</option>
+                            <option value="7">7th Semester</option>
+                            <option value="8">8th Semester</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="resourceDescription" class="w-full px-3 py-2 border rounded-lg" rows="4" placeholder="Describe the resource..."></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">File Upload</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="mt-4">
+                            <label for="resourceFile" class="cursor-pointer">
+                                <span class="mt-2 block text-sm font-medium text-gray-900">Click to upload file</span>
+                                <span class="mt-1 block text-xs text-gray-500">PDF, DOC, PPT, or other formats</span>
+                            </label>
+                            <input type="file" id="resourceFile" name="resourceFile" class="hidden">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button type="submit" class="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-bold hover:bg-green-700">
+                        Upload Resource
+                    </button>
+                    <button type="button" onclick="closeUploadResourceModal()" class="flex-1 bg-gray-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-gray-600">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>    
+<script>
+        // Global variables
+        let currentFaculty = null;
+        let facultyToken = null;
+        let assignedStudents = [];
+        const API_BASE = '/api';
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            checkFacultyAuth();
+        });
+
+        // Check if faculty is already logged in
+        function checkFacultyAuth() {
+            const token = localStorage.getItem('facultyToken');
+            const faculty = localStorage.getItem('currentFaculty');
+            
+            if (token && faculty) {
+                facultyToken = token;
+                currentFaculty = JSON.parse(faculty);
+                showFacultyDashboard();
+            } else {
+                showFacultyLoginModal();
+            }
+        }
+
+        // Show faculty login modal
+        function showFacultyLoginModal() {
+            document.getElementById('facultyLoginModal').classList.remove('hidden');
+            document.getElementById('facultyDashboard').classList.add('hidden');
+        }
+
+        // Handle faculty login
+        async function handleFacultyLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('facultyEmail').value;
+            const password = document.getElementById('facultyPassword').value;
+
+            showLoading(true);
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        email, 
+                        password, 
+                        role: 'faculty' 
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    facultyToken = result.data.token;
+                    currentFaculty = result.data.user;
+                    localStorage.setItem('facultyToken', facultyToken);
+                    localStorage.setItem('currentFaculty', JSON.stringify(currentFaculty));
+
+                    document.getElementById('facultyLoginModal').classList.add('hidden');
+                    showFacultyDashboard();
+                    showAlert('Faculty login successful!', 'success');
+                } else {
+                    showAlert(result.message || 'Faculty login failed', 'error');
+                }
+            } catch (error) {
+                console.error('Faculty login error:', error);
+                showAlert('Network error. Please try again.', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Show faculty dashboard
+        function showFacultyDashboard() {
+            document.getElementById('facultyDashboard').classList.remove('hidden');
+            
+            // Update header
+            document.getElementById('facultyName').textContent = currentFaculty.name;
+            document.getElementById('facultyDesignation').textContent = currentFaculty.profile?.designation || 'Faculty';
+            document.getElementById('facultyInfo').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+
+            // Load dashboard data
+            loadAssignedStudents();
+        }
+
+        // Faculty tab navigation
+        function showFacultyTab(tabName) {
+            // Hide all faculty content
+            document.querySelectorAll('.faculty-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('[id^="faculty"][id$="Tab"]').forEach(tab => {
+                tab.className = 'px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700';
+            });
+            
+            // Show selected content and activate tab
+            document.getElementById('faculty' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.remove('hidden');
+            document.getElementById('faculty' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Tab').className = 'px-4 py-2 rounded-lg font-medium transition-all duration-300 tab-active';
+            
+            // Load data for the selected tab
+            switch(tabName) {
+                case 'students':
+                    loadAssignedStudents();
+                    break;
+                case 'attendance':
+                    loadAttendanceManagement();
+                    break;
+                case 'marks':
+                    loadMarksManagement();
+                    break;
+                case 'notices':
+                    loadNoticeManagement();
+                    break;
+                case 'resources':
+                    loadResourceManagement();
+                    break;
+                case 'leaves':
+                    loadLeaveApplications();
+                    break;
+            }
+        }
+
+        // API call helper
+        async function facultyApiCall(endpoint, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${facultyToken}`
+                }
+            };
+
+            const finalOptions = {
+                ...defaultOptions,
+                ...options,
+                headers: {
+                    ...defaultOptions.headers,
+                    ...options.headers
+                }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, finalOptions);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'API call failed');
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Faculty API Error:', error);
+                throw error;
+            }
+        }
+
+        // Load assigned students
+        async function loadAssignedStudents() {
+            try {
+                showLoading(true);
+                const result = await facultyApiCall('/teacher/students');
+                
+                if (result.success) {
+                    assignedStudents = result.data;
+                    const studentsHtml = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${assignedStudents.map(student => `
+                                <div class="bg-white p-4 rounded-lg border hover:shadow-md transition-shadow">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                            <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <h4 class="font-semibold text-gray-900">${student.name}</h4>
+                                            <p class="text-sm text-gray-600">${student.rollNumber || 'No Roll Number'}</p>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-1 text-sm">
+                                        <p><strong>Course:</strong> ${student.course || 'Not assigned'}</p>
+                                        <p><strong>Semester:</strong> ${student.semester || 'Not assigned'}</p>
+                                        <p><strong>Email:</strong> ${student.email}</p>
+                                        <p><strong>CGPA:</strong> ${student.cgpa || 'Not calculated'}</p>
+                                    </div>
+                                    <div class="mt-4 flex space-x-2">
+                                        <button onclick="viewStudentDetails('${student.id}')" class="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                                            View Details
+                                        </button>
+                                        <button onclick="quickMarkAttendance('${student.id}')" class="flex-1 bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
+                                            Mark Attendance
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        ${assignedStudents.length === 0 ? '<p class="text-gray-600 text-center py-8">No students assigned yet</p>' : ''}
+                    `;
+                    
+                    document.getElementById('assignedStudentsContainer').innerHTML = studentsHtml;
+                    
+                    // Populate student dropdowns in modals
+                    populateStudentDropdowns();
+                }
+            } catch (error) {
+                console.error('Load assigned students error:', error);
+                document.getElementById('assignedStudentsContainer').innerHTML = '<p class="text-red-600">Error loading students</p>';
+                showAlert('Failed to load assigned students', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Populate student dropdowns in modals
+        function populateStudentDropdowns() {
+            const attendanceSelect = document.getElementById('attendanceStudentId');
+            const marksSelect = document.getElementById('marksStudentId');
+            
+            const studentOptions = assignedStudents.map(student => 
+                `<option value="${student.id}">${student.name} (${student.rollNumber || 'No Roll'})</option>`
+            ).join('');
+            
+            attendanceSelect.innerHTML = '<option value="">Select Student</option>' + studentOptions;
+            marksSelect.innerHTML = '<option value="">Select Student</option>' + studentOptions;
+        }    
+    // Load attendance management
+        async function loadAttendanceManagement() {
+            document.getElementById('attendanceManagementContainer').innerHTML = `
+                <div class="bg-white p-6 rounded-lg">
+                    <h4 class="font-semibold text-gray-900 mb-4">Recent Attendance Records</h4>
+                    <p class="text-gray-600 mb-4">View and manage attendance for your students</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button onclick="showMarkAttendanceModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            📅 Mark New Attendance
+                        </button>
+                        <button onclick="viewAttendanceReports()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            📊 View Reports
+                        </button>
+                        <button onclick="exportAttendance()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+                            📤 Export Data
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Load marks management
+        async function loadMarksManagement() {
+            document.getElementById('marksManagementContainer').innerHTML = `
+                <div class="bg-white p-6 rounded-lg">
+                    <h4 class="font-semibold text-gray-900 mb-4">Student Marks & Grades</h4>
+                    <p class="text-gray-600 mb-4">Manage marks and grades for your students</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button onclick="showAddMarksModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            📊 Add New Marks
+                        </button>
+                        <button onclick="viewMarksReports()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            📈 View Performance
+                        </button>
+                        <button onclick="publishMarks()" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">
+                            📢 Publish Results
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Load notice management
+        async function loadNoticeManagement() {
+            try {
+                showLoading(true);
+                const result = await facultyApiCall('/teacher/notices');
+                
+                if (result.success) {
+                    const notices = result.data;
+                    const noticesHtml = `
+                        <div class="space-y-4">
+                            ${notices.map(notice => `
+                                <div class="bg-white p-4 rounded-lg border border-l-4 ${notice.priority === 'urgent' ? 'border-red-500' : notice.priority === 'important' ? 'border-yellow-500' : 'border-blue-500'}">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <h4 class="font-semibold text-gray-900">${notice.title}</h4>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2 py-1 rounded text-sm ${notice.priority === 'urgent' ? 'bg-red-100 text-red-800' : notice.priority === 'important' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">
+                                                ${notice.priority}
+                                            </span>
+                                            <button onclick="editNotice('${notice.id}')" class="text-blue-600 hover:text-blue-800">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                                </svg>
+                                            </button>
+                                            <button onclick="deleteNotice('${notice.id}')" class="text-red-600 hover:text-red-800">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p class="text-gray-700 text-sm mb-2">${notice.content}</p>
+                                    <div class="flex justify-between items-center text-xs text-gray-500">
+                                        <span>Published: ${new Date(notice.publishDate).toLocaleDateString()}</span>
+                                        <span>Views: ${notice.viewCount || 0}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                            
+                            ${notices.length === 0 ? '<p class="text-gray-600 text-center py-8">No notices published yet</p>' : ''}
+                        </div>
+                    `;
+                    
+                    document.getElementById('noticeManagementContainer').innerHTML = noticesHtml;
+                }
+            } catch (error) {
+                console.error('Load notice management error:', error);
+                document.getElementById('noticeManagementContainer').innerHTML = '<p class="text-red-600">Error loading notices</p>';
+                showAlert('Failed to load notices', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load resource management
+        async function loadResourceManagement() {
+            try {
+                showLoading(true);
+                const result = await facultyApiCall('/teacher/resources');
+                
+                if (result.success) {
+                    const resources = result.data;
+                    const resourcesHtml = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${resources.map(resource => `
+                                <div class="bg-white p-4 rounded-lg border hover:shadow-md transition-shadow">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3 flex-1">
+                                            <h4 class="font-semibold text-gray-900">${resource.title}</h4>
+                                            <p class="text-sm text-gray-600">${resource.subject}</p>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-1 text-sm">
+                                        <p><strong>Type:</strong> ${resource.resourceType}</p>
+                                        <p><strong>Semester:</strong> ${resource.semester}</p>
+                                        <p><strong>Uploaded:</strong> ${new Date(resource.uploadDate).toLocaleDateString()}</p>
+                                        <p><strong>Downloads:</strong> ${resource.downloadCount || 0}</p>
+                                    </div>
+                                    <div class="mt-4 flex space-x-2">
+                                        <button onclick="editResource('${resource.id}')" class="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                                            Edit
+                                        </button>
+                                        <button onclick="deleteResource('${resource.id}')" class="flex-1 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        ${resources.length === 0 ? '<p class="text-gray-600 text-center py-8">No resources uploaded yet</p>' : ''}
+                    `;
+                    
+                    document.getElementById('resourceManagementContainer').innerHTML = resourcesHtml;
+                }
+            } catch (error) {
+                console.error('Load resource management error:', error);
+                document.getElementById('resourceManagementContainer').innerHTML = '<p class="text-red-600">Error loading resources</p>';
+                showAlert('Failed to load resources', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load leave applications
+        async function loadLeaveApplications() {
+            try {
+                showLoading(true);
+                const result = await facultyApiCall('/teacher/leaves');
+                
+                if (result.success) {
+                    const leaves = result.data;
+                    const leavesHtml = `
+                        <div class="space-y-4">
+                            ${leaves.map(leave => `
+                                <div class="bg-white p-4 rounded-lg border">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div>
+                                            <h4 class="font-semibold text-gray-900">${leave.studentName}</h4>
+                                            <p class="text-sm text-gray-600">${leave.studentEmail}</p>
+                                        </div>
+                                        <span class="px-2 py-1 rounded text-sm ${leave.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : leave.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                            ${leave.status}
+                                        </span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4 text-sm mb-3">
+                                        <div><strong>Leave Type:</strong> ${leave.leaveType}</div>
+                                        <div><strong>Duration:</strong> ${leave.totalDays} days</div>
+                                        <div><strong>From:</strong> ${new Date(leave.fromDate).toLocaleDateString()}</div>
+                                        <div><strong>To:</strong> ${new Date(leave.toDate).toLocaleDateString()}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong>Reason:</strong>
+                                        <p class="text-gray-700 mt-1">${leave.reason}</p>
+                                    </div>
+                                    ${leave.status === 'pending' ? `
+                                        <div class="flex space-x-2">
+                                            <button onclick="reviewLeave('${leave.id}', 'approved')" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                                                ✅ Approve
+                                            </button>
+                                            <button onclick="reviewLeave('${leave.id}', 'rejected')" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                                                ❌ Reject
+                                            </button>
+                                        </div>
+                                    ` : leave.reviewComments ? `
+                                        <div class="mt-3 p-3 bg-gray-50 rounded">
+                                            <strong>Review Comments:</strong>
+                                            <p class="text-gray-700 mt-1">${leave.reviewComments}</p>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                            
+                            ${leaves.length === 0 ? '<p class="text-gray-600 text-center py-8">No leave applications to review</p>' : ''}
+                        </div>
+                    `;
+                    
+                    document.getElementById('leaveApplicationsContainer').innerHTML = leavesHtml;
+                }
+            } catch (error) {
+                console.error('Load leave applications error:', error);
+                document.getElementById('leaveApplicationsContainer').innerHTML = '<p class="text-red-600">Error loading leave applications</p>';
+                showAlert('Failed to load leave applications', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }  
+      // Modal functions
+        function showMarkAttendanceModal() {
+            document.getElementById('markAttendanceModal').classList.remove('hidden');
+            document.getElementById('attendanceDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function closeMarkAttendanceModal() {
+            document.getElementById('markAttendanceModal').classList.add('hidden');
+            document.getElementById('markAttendanceForm').reset();
+        }
+
+        function showAddMarksModal() {
+            document.getElementById('addMarksModal').classList.remove('hidden');
+        }
+
+        function closeAddMarksModal() {
+            document.getElementById('addMarksModal').classList.add('hidden');
+            document.getElementById('addMarksForm').reset();
+        }
+
+        function showCreateNoticeModal() {
+            document.getElementById('createNoticeModal').classList.remove('hidden');
+        }
+
+        function closeCreateNoticeModal() {
+            document.getElementById('createNoticeModal').classList.add('hidden');
+            document.getElementById('createNoticeForm').reset();
+        }
+
+        function showUploadResourceModal() {
+            document.getElementById('uploadResourceModal').classList.remove('hidden');
+        }
+
+        function closeUploadResourceModal() {
+            document.getElementById('uploadResourceModal').classList.add('hidden');
+            document.getElementById('uploadResourceForm').reset();
+        }
+
+        // Handle mark attendance
+        async function handleMarkAttendance(event) {
+            event.preventDefault();
+            
+            const formData = {
+                studentId: document.getElementById('attendanceStudentId').value,
+                subject: document.getElementById('attendanceSubject').value,
+                date: document.getElementById('attendanceDate').value,
+                status: document.getElementById('attendanceStatus').value,
+                classType: document.getElementById('attendanceClassType').value,
+                duration: parseInt(document.getElementById('attendanceDuration').value),
+                remarks: document.getElementById('attendanceRemarks').value
+            };
+            
+            try {
+                showLoading(true);
+                const result = await facultyApiCall('/teacher/attendance', {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+                
+                if (result.success) {
+                    showAlert('Attendance marked successfully!', 'success');
+                    closeMarkAttendanceModal();
+                    loadAttendanceManagement();
+                }
+            } catch (error) {
+                console.error('Mark attendance error:', error);
+                showAlert('Failed to mark attendance', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Handle add marks
+        async function handleAddMarks(event) {
+            event.preventDefault();
+            
+            const formData = {
+                studentId: document.getElementById('marksStudentId').value,
+                subject: document.getElementById('marksSubject').value,
+                examType: document.getElementById('marksExamType').value,
+                totalMarks: parseInt(document.getElementById('marksObtained').value),
+                maxMarks: parseInt(document.getElementById('marksMaximum').value),
+                credits: parseInt(document.getElementById('marksCredits').value),
+                semester: parseInt(document.getElementById('marksSemester').value),
+                remarks: document.getElementById('marksRemarks').value,
+                isPublished: document.getElementById('marksPublished').checked
+            };
+            
+            try {
+                showLoading(true);
+                const result = await facultyApiCall('/teacher/marks', {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+                
+                if (result.success) {
+                    showAlert('Marks added successfully!', 'success');
+                    closeAddMarksModal();
+                    loadMarksManagement();
+                }
+            } catch (error) {
+                console.error('Add marks error:', error);
+                showAlert('Failed to add marks', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Handle create notice
+        async function handleCreateNotice(event) {
+            event.preventDefault();
+            
+            const targetAudience = document.querySelector('input[name="noticeTarget"]:checked').value;
+            let targetGroup = { allStudents: true };
+            
+            if (targetAudience === 'myStudents') {
+                targetGroup = { specificStudents: assignedStudents.map(s => s.id) };
+            } else if (targetAudience === 'department') {
+                targetGroup = { departments: [currentFaculty.profile?.department] };
+            }
+            
+            const formData = {
+                title: document.getElementById('noticeTitle').value,
+                content: document.getElementById('noticeContent').value,
+                priority: document.getElementById('noticePriority').value,
+                category: document.getElementById('noticeCategory').value,
+                expiryDate: document.getElementById('noticeExpiry').value,
+                targetGroup: targetGroup
+            };
+            
+            try {
+                showLoading(true);
+                const result = await facultyApiCall('/teacher/notice', {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+                
+                if (result.success) {
+                    showAlert('Notice published successfully!', 'success');
+                    closeCreateNoticeModal();
+                    loadNoticeManagement();
+                }
+            } catch (error) {
+                console.error('Create notice error:', error);
+                showAlert('Failed to publish notice', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Handle upload resource
+        async function handleUploadResource(event) {
+            event.preventDefault();
+            
+            const formData = {
+                title: document.getElementById('resourceTitle').value,
+                description: document.getElementById('resourceDescription').value,
+                subject: document.getElementById('resourceSubject').value,
+                resourceType: document.getElementById('resourceType').value,
+                semester: parseInt(document.getElementById('resourceSemester').value),
+                targetGroup: { allStudents: true }
+            };
+            
+            try {
+                showLoading(true);
+                const result = await facultyApiCall('/teacher/resource', {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+                
+                if (result.success) {
+                    showAlert('Resource uploaded successfully!', 'success');
+                    closeUploadResourceModal();
+                    loadResourceManagement();
+                }
+            } catch (error) {
+                console.error('Upload resource error:', error);
+                showAlert('Failed to upload resource', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Review leave application
+        async function reviewLeave(leaveId, status) {
+            const comments = prompt(`Enter ${status === 'approved' ? 'approval' : 'rejection'} comments (optional):`);
+            if (comments === null) return; // User cancelled
+            
+            try {
+                showLoading(true);
+                const result = await facultyApiCall(`/teacher/leave/${leaveId}/review`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status, comments })
+                });
+                
+                if (result.success) {
+                    showAlert(`Leave application ${status} successfully!`, 'success');
+                    loadLeaveApplications();
+                }
+            } catch (error) {
+                console.error('Review leave error:', error);
+                showAlert('Failed to review leave application', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Quick mark attendance for a specific student
+        function quickMarkAttendance(studentId) {
+            showMarkAttendanceModal();
+            document.getElementById('attendanceStudentId').value = studentId;
+        }
+
+        // Placeholder functions for additional features
+        function viewStudentDetails(studentId) {
+            showAlert('Student details view - Coming soon!', 'info');
+        }
+
+        function viewAttendanceReports() {
+            showAlert('Attendance reports - Coming soon!', 'info');
+        }
+
+        function exportAttendance() {
+            showAlert('Export attendance - Coming soon!', 'info');
+        }
+
+        function viewMarksReports() {
+            showAlert('Marks reports - Coming soon!', 'info');
+        }
+
+        function publishMarks() {
+            showAlert('Publish marks - Coming soon!', 'info');
+        }
+
+        function editNotice(noticeId) {
+            showAlert('Edit notice - Coming soon!', 'info');
+        }
+
+        function deleteNotice(noticeId) {
+            if (confirm('Are you sure you want to delete this notice?')) {
+                showAlert('Delete notice - Coming soon!', 'info');
+            }
+        }
+
+        function editResource(resourceId) {
+            showAlert('Edit resource - Coming soon!', 'info');
+        }
+
+        function deleteResource(resourceId) {
+            if (confirm('Are you sure you want to delete this resource?')) {
+                showAlert('Delete resource - Coming soon!', 'info');
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('facultyToken');
+            localStorage.removeItem('currentFaculty');
+            facultyToken = null;
+            currentFaculty = null;
+            
+            document.getElementById('facultyDashboard').classList.add('hidden');
+            document.getElementById('facultyInfo').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            showFacultyLoginModal();
+            
+            showAlert('Faculty logged out successfully', 'success');
+        }
+
+        // Show loading overlay
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                overlay.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // Show alert messages
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                type === 'info' ? 'bg-blue-500 text-white' :
+                'bg-blue-500 text-white'
+            }`;
+            alertDiv.textContent = message;
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

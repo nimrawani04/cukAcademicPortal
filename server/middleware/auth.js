@@ -66,10 +66,10 @@ const studentAuth = async (req, res, next) => {
 
 /**
  * Teacher role middleware
- * Ensures user is a teacher
+ * Ensures user is a teacher or faculty
  */
 const teacherAuth = async (req, res, next) => {
-    if (req.user.role !== 'teacher') {
+    if (req.user.role !== 'teacher' && req.user.role !== 'faculty') {
         return res.status(403).json({
             success: false,
             message: 'Access denied. Teacher privileges required.'

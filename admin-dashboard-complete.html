@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUK Admin Dashboard - Full Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-active {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: #ffffff;
+        }
+        .admin-card {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #dc2626;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status-pending { background-color: #fbbf24; color: #92400e; }
+        .status-approved { background-color: #10b981; color: #065f46; }
+        .status-rejected { background-color: #ef4444; color: #991b1b; }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-red-50 to-red-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-red-600">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center shadow-lg bg-red-600">
+                        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <h1 class="text-2xl font-bold text-gray-900">CUK Admin Dashboard</h1>
+                        <p class="text-gray-600">Complete System Control</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="adminInfo" class="text-right hidden">
+                        <p class="text-sm font-medium text-gray-900" id="adminName"></p>
+                        <p class="text-xs text-red-600 font-semibold">System Administrator</p>
+                    </div>
+                    <button onclick="logout()" id="logoutBtn" class="px-6 py-3 rounded-lg font-semibold transition-all duration-300 bg-red-600 text-white hover:bg-red-700 hidden">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
+            <div class="loading-spinner"></div>
+            <span class="text-gray-700">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="adminLoginModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="admin-card rounded-2xl p-10 max-w-lg w-full mx-4">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-red-700 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold text-white">Admin Login</h2>
+                <p class="text-gray-200 mt-3 font-medium">System Administrator Access</p>
+                <div class="w-16 h-1 bg-gray-400 rounded-full mx-auto mt-2"></div>
+            </div>
+            
+            <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-white mb-3">Email Address</label>
+                    <input type="email" id="adminEmail" class="w-full px-5 py-4 rounded-xl font-medium text-slate-800" placeholder="Enter admin email" required>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-white mb-3">Password</label>
+                    <input type="password" id="adminPassword" class="w-full px-5 py-4 rounded-xl font-medium text-slate-800" placeholder="Enter admin password" required>
+                </div>
+                
+                <button type="submit" class="w-full bg-red-700 hover:bg-red-800 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300">
+                    Admin Login
+                </button>
+            </form>
+            
+            <div class="mt-8 p-6 bg-red-800 bg-opacity-30 rounded-xl border border-red-400">
+                <h4 class="font-bold text-sm text-white mb-3">Admin Credentials</h4>
+                <div class="text-sm text-gray-200 font-medium">
+                    <div>Email: <code class="bg-red-700 px-2 py-1 rounded">admin@cuk.com</code></div>
+                    <div>Password: <code class="bg-red-700 px-2 py-1 rounded">admin123</code></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Admin Dashboard -->
+    <div id="adminDashboard" class="hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Dashboard Stats -->
+            <div id="dashboardStats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Stats will be loaded here -->
+            </div>
+
+            <!-- Admin Navigation -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6">👑 Admin Control Panel</h2>
+                
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <button onclick="showAdminTab('users')" id="adminUsersTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 tab-active">
+                        User Management
+                    </button>
+                    <button onclick="showAdminTab('registrations')" id="adminRegistrationsTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Pending Registrations
+                    </button>
+                    <button onclick="showAdminTab('academic')" id="adminAcademicTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Academic Oversight
+                    </button>
+                    <button onclick="showAdminTab('leaves')" id="adminLeavesTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Leave Management
+                    </button>
+                    <button onclick="showAdminTab('notices')" id="adminNoticesTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Notice Management
+                    </button>
+                </div>
+
+                <!-- User Management Tab -->
+                <div id="adminUsers" class="admin-content">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-semibold text-gray-900">👥 User Management</h3>
+                            <button onclick="showCreateUserModal()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                                ➕ Add User Manually
+                            </button>
+                        </div>
+                        
+                        <!-- User Filters -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <select id="userRoleFilter" onchange="filterUsers()" class="px-3 py-2 border rounded-lg">
+                                <option value="">All Roles</option>
+                                <option value="student">Students</option>
+                                <option value="faculty">Faculty</option>
+                                <option value="admin">Admins</option>
+                            </select>
+                            <select id="userStatusFilter" onchange="filterUsers()" class="px-3 py-2 border rounded-lg">
+                                <option value="">All Status</option>
+                                <option value="approved">Approved</option>
+                                <option value="pending">Pending</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                            <input type="text" id="userSearchFilter" onkeyup="filterUsers()" placeholder="Search users..." class="px-3 py-2 border rounded-lg">
+                            <button onclick="loadAllUsers()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                🔄 Refresh
+                            </button>
+                        </div>
+                        
+                        <div id="usersTableContainer">
+                            <!-- Users table will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Registrations Tab -->
+                <div id="adminRegistrations" class="admin-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">📋 Pending Registrations</h3>
+                        <div id="pendingRegistrationsContainer">
+                            <!-- Pending registrations will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Academic Oversight Tab -->
+                <div id="adminAcademic" class="admin-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">🎓 Academic Oversight</h3>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Faculty Management -->
+                            <div class="bg-white p-4 rounded-lg">
+                                <h4 class="font-semibold text-gray-900 mb-4">👨‍🏫 Faculty Management</h4>
+                                <div id="facultyManagementContainer">
+                                    <!-- Faculty management will be loaded here -->
+                                </div>
+                            </div>
+                            
+                            <!-- Student Management -->
+                            <div class="bg-white p-4 rounded-lg">
+                                <h4 class="font-semibold text-gray-900 mb-4">👨‍🎓 Student Management</h4>
+                                <div id="studentManagementContainer">
+                                    <!-- Student management will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Academic Records -->
+                        <div class="mt-6 bg-white p-4 rounded-lg">
+                            <h4 class="font-semibold text-gray-900 mb-4">📊 Academic Records</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <button onclick="viewAllMarks()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                    📈 View All Marks
+                                </button>
+                                <button onclick="viewAllAttendance()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                    📅 View All Attendance
+                                </button>
+                                <button onclick="generateReports()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                                    📋 Generate Reports
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leave Management Tab -->
+                <div id="adminLeaves" class="admin-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">🏖️ Leave Management</h3>
+                        <div id="leaveManagementContainer">
+                            <!-- Leave management will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notice Management Tab -->
+                <div id="adminNotices" class="admin-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">📢 Notice Management</h3>
+                        <div id="noticeManagementContainer">
+                            <!-- Notice management will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div id="createUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">➕ Add User Manually</h3>
+                <button onclick="closeCreateUserModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="createUserForm" onsubmit="handleCreateUser(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                        <input type="text" id="createUserName" class="w-full px-3 py-2 border rounded-lg" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                        <input type="email" id="createUserEmail" class="w-full px-3 py-2 border rounded-lg" required>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+                        <input type="password" id="createUserPassword" class="w-full px-3 py-2 border rounded-lg" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Role *</label>
+                        <select id="createUserRole" onchange="toggleRoleFields()" class="w-full px-3 py-2 border rounded-lg" required>
+                            <option value="">Select Role</option>
+                            <option value="student">Student</option>
+                            <option value="faculty">Faculty</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Student Fields -->
+                <div id="studentFields" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Course *</label>
+                            <select id="createStudentCourse" class="w-full px-3 py-2 border rounded-lg">
+                                <option value="B.Tech Computer Science">B.Tech Computer Science</option>
+                                <option value="B.Tech Civil Engineering">B.Tech Civil Engineering</option>
+                                <option value="B.Tech Mechanical Engineering">B.Tech Mechanical Engineering</option>
+                                <option value="MBA">MBA</option>
+                                <option value="BBA">BBA</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Semester *</label>
+                            <select id="createStudentSemester" class="w-full px-3 py-2 border rounded-lg">
+                                <option value="1">1st Semester</option>
+                                <option value="2">2nd Semester</option>
+                                <option value="3">3rd Semester</option>
+                                <option value="4">4th Semester</option>
+                                <option value="5">5th Semester</option>
+                                <option value="6">6th Semester</option>
+                                <option value="7">7th Semester</option>
+                                <option value="8">8th Semester</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Faculty Fields -->
+                <div id="facultyFields" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Department *</label>
+                            <select id="createFacultyDepartment" class="w-full px-3 py-2 border rounded-lg">
+                                <option value="Computer Science and Engineering">Computer Science and Engineering</option>
+                                <option value="Civil Engineering">Civil Engineering</option>
+                                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="Physics">Physics</option>
+                                <option value="Chemistry">Chemistry</option>
+                                <option value="Management Studies">Management Studies</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Designation *</label>
+                            <select id="createFacultyDesignation" class="w-full px-3 py-2 border rounded-lg">
+                                <option value="Professor">Professor</option>
+                                <option value="Assistant Professor">Assistant Professor</option>
+                                <option value="Lecturer">Lecturer</option>
+                                <option value="Guest Faculty">Guest Faculty</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button type="submit" class="flex-1 bg-red-600 text-white py-3 px-6 rounded-lg font-bold hover:bg-red-700">
+                        Create User
+                    </button>
+                    <button type="button" onclick="closeCreateUserModal()" class="flex-1 bg-gray-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-gray-600">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentAdmin = null;
+        let adminToken = null;
+        const API_BASE = '/api';
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAdminAuth();
+        });
+
+        // Check if admin is already logged in
+        function checkAdminAuth() {
+            const token = localStorage.getItem('adminToken');
+            const admin = localStorage.getItem('currentAdmin');
+            
+            if (token && admin) {
+                adminToken = token;
+                currentAdmin = JSON.parse(admin);
+                showAdminDashboard();
+            } else {
+                showAdminLoginModal();
+            }
+        }
+
+        // Show admin login modal
+        function showAdminLoginModal() {
+            document.getElementById('adminLoginModal').classList.remove('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
+        }
+
+        // Handle admin login
+        async function handleAdminLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+
+            showLoading(true);
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    adminToken = result.data.token;
+                    currentAdmin = result.data.admin;
+                    localStorage.setItem('adminToken', adminToken);
+                    localStorage.setItem('currentAdmin', JSON.stringify(currentAdmin));
+
+                    document.getElementById('adminLoginModal').classList.add('hidden');
+                    showAdminDashboard();
+                    showAlert('Admin login successful!', 'success');
+                } else {
+                    showAlert(result.message || 'Admin login failed', 'error');
+                }
+            } catch (error) {
+                console.error('Admin login error:', error);
+                showAlert('Network error. Please try again.', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Show admin dashboard
+        function showAdminDashboard() {
+            document.getElementById('adminDashboard').classList.remove('hidden');
+            
+            // Update header
+            document.getElementById('adminName').textContent = currentAdmin.name;
+            document.getElementById('adminInfo').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+
+            // Load dashboard data
+            loadDashboardStats();
+            loadAllUsers();
+        }
+
+        // Admin tab navigation
+        function showAdminTab(tabName) {
+            // Hide all admin content
+            document.querySelectorAll('.admin-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('[id^="admin"][id$="Tab"]').forEach(tab => {
+                tab.className = 'px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700';
+            });
+            
+            // Show selected content and activate tab
+            document.getElementById('admin' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.remove('hidden');
+            document.getElementById('admin' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Tab').className = 'px-4 py-2 rounded-lg font-medium transition-all duration-300 tab-active';
+            
+            // Load data for the selected tab
+            switch(tabName) {
+                case 'users':
+                    loadAllUsers();
+                    break;
+                case 'registrations':
+                    loadPendingRegistrations();
+                    break;
+                case 'academic':
+                    loadAcademicOversight();
+                    break;
+                case 'leaves':
+                    loadLeaveManagement();
+                    break;
+                case 'notices':
+                    loadNoticeManagement();
+                    break;
+            }
+        }
+
+        // API call helper
+        async function adminApiCall(endpoint, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${adminToken}`
+                }
+            };
+
+            const finalOptions = {
+                ...defaultOptions,
+                ...options,
+                headers: {
+                    ...defaultOptions.headers,
+                    ...options.headers
+                }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, finalOptions);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'API call failed');
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Admin API Error:', error);
+                throw error;
+            }
+        }
+
+        // Load dashboard statistics
+        async function loadDashboardStats() {
+            try {
+                showLoading(true);
+                const result = await adminApiCall('/admin/stats');
+                
+                if (result.success) {
+                    const stats = result.data;
+                    const statsHtml = `
+                        <div class="bg-white p-6 rounded-lg shadow-lg">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-blue-100">
+                                    <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Total Users</p>
+                                    <p class="text-2xl font-bold text-gray-900">${stats.users.total}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow-lg">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-yellow-100">
+                                    <svg class="w-8 h-8 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Pending Registrations</p>
+                                    <p class="text-2xl font-bold text-gray-900">${stats.users.pending}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow-lg">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-green-100">
+                                    <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Students</p>
+                                    <p class="text-2xl font-bold text-gray-900">${stats.users.students}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow-lg">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-purple-100">
+                                    <svg class="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+                                        <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Faculty</p>
+                                    <p class="text-2xl font-bold text-gray-900">${stats.users.faculty}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('dashboardStats').innerHTML = statsHtml;
+                }
+            } catch (error) {
+                console.error('Load dashboard stats error:', error);
+                showAlert('Failed to load dashboard statistics', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load all users
+        async function loadAllUsers() {
+            try {
+                showLoading(true);
+                const result = await adminApiCall('/admin/users');
+                
+                if (result.success) {
+                    const users = result.data.users;
+                    const usersHtml = `
+                        <div class="overflow-x-auto">
+                            <table class="w-full bg-white rounded-lg">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-900">Name</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-900">Email</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-900">Role</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-900">Status</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-900">Created</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-900">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${users.map(user => `
+                                        <tr class="border-b hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-gray-900">${user.name}</td>
+                                            <td class="px-4 py-3 text-gray-900">${user.email}</td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 rounded text-sm bg-blue-100 text-blue-800">
+                                                    ${user.role}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 rounded text-sm status-${user.status}">
+                                                    ${user.status}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-gray-900">${new Date(user.createdAt).toLocaleDateString()}</td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex space-x-2">
+                                                    ${user.status === 'pending' ? `
+                                                        <button onclick="approveUser('${user._id}')" class="bg-green-600 text-white px-2 py-1 rounded text-sm hover:bg-green-700">
+                                                            Approve
+                                                        </button>
+                                                        <button onclick="rejectUser('${user._id}')" class="bg-red-600 text-white px-2 py-1 rounded text-sm hover:bg-red-700">
+                                                            Reject
+                                                        </button>
+                                                    ` : ''}
+                                                    <button onclick="editUser('${user._id}')" class="bg-blue-600 text-white px-2 py-1 rounded text-sm hover:bg-blue-700">
+                                                        Edit
+                                                    </button>
+                                                    <button onclick="deleteUser('${user._id}')" class="bg-red-600 text-white px-2 py-1 rounded text-sm hover:bg-red-700">
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    document.getElementById('usersTableContainer').innerHTML = usersHtml;
+                }
+            } catch (error) {
+                console.error('Load users error:', error);
+                document.getElementById('usersTableContainer').innerHTML = '<p class="text-red-600">Error loading users</p>';
+                showAlert('Failed to load users', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load pending registrations
+        async function loadPendingRegistrations() {
+            try {
+                showLoading(true);
+                const result = await adminApiCall('/admin/pending-registrations');
+                
+                if (result.success) {
+                    const pendingUsers = result.data;
+                    if (pendingUsers.length > 0) {
+                        const pendingHtml = pendingUsers.map(user => `
+                            <div class="bg-white p-4 rounded-lg border mb-4">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">${user.name}</h4>
+                                        <p class="text-gray-600">${user.email}</p>
+                                        <p class="text-sm text-gray-500">Role: ${user.role}</p>
+                                        <p class="text-sm text-gray-500">Applied: ${new Date(user.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button onclick="approveUser('${user._id}')" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                                            ✅ Approve
+                                        </button>
+                                        <button onclick="rejectUser('${user._id}')" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                                            ❌ Reject
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        document.getElementById('pendingRegistrationsContainer').innerHTML = pendingHtml;
+                    } else {
+                        document.getElementById('pendingRegistrationsContainer').innerHTML = '<p class="text-gray-600">No pending registrations</p>';
+                    }
+                }
+            } catch (error) {
+                console.error('Load pending registrations error:', error);
+                document.getElementById('pendingRegistrationsContainer').innerHTML = '<p class="text-red-600">Error loading pending registrations</p>';
+                showAlert('Failed to load pending registrations', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Approve user
+        async function approveUser(userId) {
+            if (!confirm('Are you sure you want to approve this user?')) return;
+            
+            try {
+                showLoading(true);
+                const result = await adminApiCall(`/admin/user/${userId}/status`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status: 'approved' })
+                });
+                
+                if (result.success) {
+                    showAlert('User approved successfully!', 'success');
+                    loadAllUsers();
+                    loadPendingRegistrations();
+                    loadDashboardStats();
+                }
+            } catch (error) {
+                console.error('Approve user error:', error);
+                showAlert('Failed to approve user', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Reject user
+        async function rejectUser(userId) {
+            const reason = prompt('Enter rejection reason (optional):');
+            if (reason === null) return; // User cancelled
+            
+            try {
+                showLoading(true);
+                const result = await adminApiCall(`/admin/user/${userId}/status`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status: 'rejected', reason })
+                });
+                
+                if (result.success) {
+                    showAlert('User rejected successfully!', 'success');
+                    loadAllUsers();
+                    loadPendingRegistrations();
+                    loadDashboardStats();
+                }
+            } catch (error) {
+                console.error('Reject user error:', error);
+                showAlert('Failed to reject user', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Delete user
+        async function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+            
+            try {
+                showLoading(true);
+                const result = await adminApiCall(`/admin/user/${userId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (result.success) {
+                    showAlert('User deleted successfully!', 'success');
+                    loadAllUsers();
+                    loadDashboardStats();
+                }
+            } catch (error) {
+                console.error('Delete user error:', error);
+                showAlert('Failed to delete user', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Show create user modal
+        function showCreateUserModal() {
+            document.getElementById('createUserModal').classList.remove('hidden');
+        }
+
+        // Close create user modal
+        function closeCreateUserModal() {
+            document.getElementById('createUserModal').classList.add('hidden');
+            document.getElementById('createUserForm').reset();
+            document.getElementById('studentFields').classList.add('hidden');
+            document.getElementById('facultyFields').classList.add('hidden');
+        }
+
+        // Toggle role fields
+        function toggleRoleFields() {
+            const role = document.getElementById('createUserRole').value;
+            const studentFields = document.getElementById('studentFields');
+            const facultyFields = document.getElementById('facultyFields');
+            
+            if (role === 'student') {
+                studentFields.classList.remove('hidden');
+                facultyFields.classList.add('hidden');
+            } else if (role === 'faculty') {
+                facultyFields.classList.remove('hidden');
+                studentFields.classList.add('hidden');
+            } else {
+                studentFields.classList.add('hidden');
+                facultyFields.classList.add('hidden');
+            }
+        }
+
+        // Handle create user
+        async function handleCreateUser(event) {
+            event.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('createUserName').value,
+                email: document.getElementById('createUserEmail').value,
+                password: document.getElementById('createUserPassword').value,
+                role: document.getElementById('createUserRole').value
+            };
+            
+            if (formData.role === 'student') {
+                formData.course = document.getElementById('createStudentCourse').value;
+                formData.semester = parseInt(document.getElementById('createStudentSemester').value);
+                formData.department = formData.course.includes('Computer Science') ? 'Computer Science and Engineering' : 
+                                   formData.course.includes('Civil') ? 'Civil Engineering' : 
+                                   formData.course.includes('Mechanical') ? 'Mechanical Engineering' : 'Management Studies';
+                formData.enrollmentYear = new Date().getFullYear();
+            } else if (formData.role === 'faculty') {
+                formData.department = document.getElementById('createFacultyDepartment').value;
+                formData.designation = document.getElementById('createFacultyDesignation').value;
+                formData.joiningDate = new Date();
+            }
+            
+            try {
+                showLoading(true);
+                const result = await adminApiCall('/admin/create-user', {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+                
+                if (result.success) {
+                    showAlert('User created successfully!', 'success');
+                    closeCreateUserModal();
+                    loadAllUsers();
+                    loadDashboardStats();
+                }
+            } catch (error) {
+                console.error('Create user error:', error);
+                showAlert('Failed to create user', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load academic oversight
+        function loadAcademicOversight() {
+            document.getElementById('facultyManagementContainer').innerHTML = `
+                <p class="text-gray-600 mb-4">Faculty oversight and management</p>
+                <button onclick="viewAllFaculty()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-2 w-full">
+                    👨‍🏫 View All Faculty
+                </button>
+                <button onclick="manageFacultyDesignations()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 w-full">
+                    🏷️ Manage Designations
+                </button>
+            `;
+            
+            document.getElementById('studentManagementContainer').innerHTML = `
+                <p class="text-gray-600 mb-4">Student oversight and management</p>
+                <button onclick="viewAllStudents()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-2 w-full">
+                    👨‍🎓 View All Students
+                </button>
+                <button onclick="manageStudentMappings()" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 w-full">
+                    🔗 Manage Mappings
+                </button>
+            `;
+        }
+
+        // Load leave management
+        function loadLeaveManagement() {
+            document.getElementById('leaveManagementContainer').innerHTML = `
+                <div class="bg-white p-4 rounded-lg">
+                    <p class="text-gray-600 mb-4">Manage all leave applications</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button onclick="viewPendingLeaves()" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+                            ⏳ Pending Leaves
+                        </button>
+                        <button onclick="viewApprovedLeaves()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            ✅ Approved Leaves
+                        </button>
+                        <button onclick="viewAllLeaves()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            📋 All Leave Applications
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Load notice management
+        function loadNoticeManagement() {
+            document.getElementById('noticeManagementContainer').innerHTML = `
+                <div class="bg-white p-4 rounded-lg">
+                    <p class="text-gray-600 mb-4">Manage all system notices</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button onclick="viewAllNotices()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            📢 View All Notices
+                        </button>
+                        <button onclick="manageNoticeCategories()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+                            🏷️ Manage Categories
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Placeholder functions for additional features
+        function filterUsers() {
+            // Implementation for filtering users
+            console.log('Filtering users...');
+        }
+
+        function editUser(userId) {
+            showAlert('Edit user functionality - Coming soon!', 'info');
+        }
+
+        function viewAllFaculty() {
+            showAlert('View all faculty - Coming soon!', 'info');
+        }
+
+        function manageFacultyDesignations() {
+            showAlert('Manage faculty designations - Coming soon!', 'info');
+        }
+
+        function viewAllStudents() {
+            showAlert('View all students - Coming soon!', 'info');
+        }
+
+        function manageStudentMappings() {
+            showAlert('Manage student mappings - Coming soon!', 'info');
+        }
+
+        function viewAllMarks() {
+            showAlert('View all marks - Coming soon!', 'info');
+        }
+
+        function viewAllAttendance() {
+            showAlert('View all attendance - Coming soon!', 'info');
+        }
+
+        function generateReports() {
+            showAlert('Generate reports - Coming soon!', 'info');
+        }
+
+        function viewPendingLeaves() {
+            showAlert('View pending leaves - Coming soon!', 'info');
+        }
+
+        function viewApprovedLeaves() {
+            showAlert('View approved leaves - Coming soon!', 'info');
+        }
+
+        function viewAllLeaves() {
+            showAlert('View all leaves - Coming soon!', 'info');
+        }
+
+        function viewAllNotices() {
+            showAlert('View all notices - Coming soon!', 'info');
+        }
+
+        function manageNoticeCategories() {
+            showAlert('Manage notice categories - Coming soon!', 'info');
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('currentAdmin');
+            adminToken = null;
+            currentAdmin = null;
+            
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('adminInfo').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            showAdminLoginModal();
+            
+            showAlert('Admin logged out successfully', 'success');
+        }
+
+        // Show loading overlay
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                overlay.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // Show alert messages
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                type === 'info' ? 'bg-blue-500 text-white' :
+                'bg-blue-500 text-white'
+            }`;
+            alertDiv.textContent = message;
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: green;
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            color: red;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #log {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Registration Fix Test</h1>
+        
+        <div class="test-section">
+            <h3>1. Test Student Registration</h3>
+            <input type="text" id="studentName" placeholder="Student Name" value="John Student">
+            <input type="email" id="studentEmail" placeholder="student@example.com" value="john.student@test.com">
+            <input type="password" id="studentPassword" placeholder="password" value="student123">
+            <button onclick="testStudentRegistration()">Register as Student</button>
+            <div id="studentResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test Faculty Registration</h3>
+            <input type="text" id="facultyName" placeholder="Faculty Name" value="Dr. Jane Faculty">
+            <input type="email" id="facultyEmail" placeholder="faculty@example.com" value="jane.faculty@test.com">
+            <input type="password" id="facultyPassword" placeholder="password" value="faculty123">
+            <button onclick="testFacultyRegistration()">Register as Faculty</button>
+            <div id="facultyResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test Login & Role Verification</h3>
+            <input type="email" id="loginEmail" placeholder="Email to test login">
+            <input type="password" id="loginPassword" placeholder="Password">
+            <button onclick="testLogin()">Test Login</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test Empty Data States</h3>
+            <button onclick="testStudentEmptyData()">Test Student Empty Data</button>
+            <button onclick="testTeacherEmptyData()">Test Teacher Empty Data</button>
+            <div id="emptyDataResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Debug Log</h3>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        console.log("🔍 Registration fix test loaded!");
+        
+        const BACKEND_URL = 'https://cukacademicportal.onrender.com';
+        let testTokens = {};
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function showResult(containerId, message, isSuccess = true) {
+            const container = document.getElementById(containerId);
+            const className = isSuccess ? 'success' : 'error';
+            container.innerHTML += `<div class="${className}">${message}</div>`;
+        }
+        
+        async function testStudentRegistration() {
+            const name = document.getElementById('studentName').value;
+            const email = document.getElementById('studentEmail').value;
+            const password = document.getElementById('studentPassword').value;
+            
+            log(`Testing student registration: ${name} (${email})`);
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        password,
+                        userType: 'student'
+                    })
+                });
+                
+                const data = await response.json();
+                log(`Student registration response: ${JSON.stringify(data)}`);
+                
+                if (data.success) {
+                    showResult('studentResult', `✅ Student registered successfully! Message: ${data.message}`, true);
+                    document.getElementById('loginEmail').value = email;
+                    document.getElementById('loginPassword').value = password;
+                } else {
+                    showResult('studentResult', `❌ Student registration failed: ${data.message}`, false);
+                }
+                
+            } catch (error) {
+                log(`Student registration error: ${error.message}`);
+                showResult('studentResult', `❌ Student registration error: ${error.message}`, false);
+            }
+        }
+        
+        async function testFacultyRegistration() {
+            const name = document.getElementById('facultyName').value;
+            const email = document.getElementById('facultyEmail').value;
+            const password = document.getElementById('facultyPassword').value;
+            
+            log(`Testing faculty registration: ${name} (${email})`);
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        password,
+                        userType: 'faculty'
+                    })
+                });
+                
+                const data = await response.json();
+                log(`Faculty registration response: ${JSON.stringify(data)}`);
+                
+                if (data.success) {
+                    showResult('facultyResult', `✅ Faculty registered successfully! Message: ${data.message}`, true);
+                    if (data.message.includes('Faculty')) {
+                        showResult('facultyResult', `✅ ROLE FIX CONFIRMED: Backend correctly created faculty account!`, true);
+                    }
+                } else {
+                    showResult('facultyResult', `❌ Faculty registration failed: ${data.message}`, false);
+                }
+                
+            } catch (error) {
+                log(`Faculty registration error: ${error.message}`);
+                showResult('facultyResult', `❌ Faculty registration error: ${error.message}`, false);
+            }
+        }
+        
+        async function testLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                alert('Please enter email and password');
+                return;
+            }
+            
+            log(`Testing login for: ${email}`);
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                log(`Login response: ${JSON.stringify(data)}`);
+                
+                if (data.success) {
+                    const role = data.data.user.role;
+                    showResult('loginResult', `✅ Login successful! Role: ${role}`, true);
+                    
+                    // Store token for further testing
+                    testTokens[role] = data.data.token;
+                    
+                    // Verify role is correct
+                    if (email.includes('student') && role === 'student') {
+                        showResult('loginResult', `✅ ROLE VERIFICATION: Student account has correct role!`, true);
+                    } else if (email.includes('faculty') && role === 'teacher') {
+                        showResult('loginResult', `✅ ROLE VERIFICATION: Faculty account has correct role (teacher)!`, true);
+                    }
+                } else {
+                    showResult('loginResult', `❌ Login failed: ${data.message}`, false);
+                }
+                
+            } catch (error) {
+                log(`Login error: ${error.message}`);
+                showResult('loginResult', `❌ Login error: ${error.message}`, false);
+            }
+        }
+        
+        async function testStudentEmptyData() {
+            const token = testTokens.student;
+            if (!token) {
+                showResult('emptyDataResult', '❌ Please login as student first', false);
+                return;
+            }
+            
+            log('Testing student empty data states...');
+            
+            try {
+                // Test student dashboard
+                const dashboardResponse = await fetch(`${BACKEND_URL}/api/student/dashboard`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (dashboardResponse.ok) {
+                    const data = await dashboardResponse.json();
+                    log(`Student dashboard: ${JSON.stringify(data)}`);
+                    
+                    if (data.data.summary.totalSubjects === 0) {
+                        showResult('emptyDataResult', '✅ Student empty state working: No subjects yet', true);
+                    }
+                }
+                
+                // Test student attendance
+                const attendanceResponse = await fetch(`${BACKEND_URL}/api/student/attendance`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (attendanceResponse.ok) {
+                    const data = await attendanceResponse.json();
+                    log(`Student attendance: ${JSON.stringify(data)}`);
+                    
+                    if (data.data.length === 0) {
+                        showResult('emptyDataResult', '✅ Student empty state working: No attendance data yet', true);
+                    }
+                }
+                
+            } catch (error) {
+                log(`Student empty data test error: ${error.message}`);
+                showResult('emptyDataResult', `❌ Student empty data test error: ${error.message}`, false);
+            }
+        }
+        
+        async function testTeacherEmptyData() {
+            const token = testTokens.teacher;
+            if (!token) {
+                showResult('emptyDataResult', '❌ Please login as teacher first', false);
+                return;
+            }
+            
+            log('Testing teacher empty data states...');
+            
+            try {
+                // Test teacher students list
+                const studentsResponse = await fetch(`${BACKEND_URL}/api/teacher/students`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (studentsResponse.ok) {
+                    const data = await studentsResponse.json();
+                    log(`Teacher students: ${JSON.stringify(data)}`);
+                    
+                    showResult('emptyDataResult', `✅ Teacher can see ${data.data.length} students`, true);
+                }
+                
+            } catch (error) {
+                log(`Teacher empty data test error: ${error.message}`);
+                showResult('emptyDataResult', `❌ Teacher empty data test error: ${error.message}`, false);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUK Academic Portal - Database Driven</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-active {
+            background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+            color: #f7fafc;
+        }
+        .premium-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .professional-input {
+            transition: all 0.3s ease;
+        }
+        .professional-input:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .executive-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        .executive-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        .university-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .university-secondary {
+            background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+        }
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .grade-A { background-color: #10b981; }
+        .grade-B { background-color: #3b82f6; }
+        .grade-C { background-color: #f59e0b; }
+        .grade-D { background-color: #ef4444; }
+        .grade-F { background-color: #6b7280; }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
+                        <img src="./client/images/CUK_New_Logo.png" alt="CUK Logo" />
+                    </div>
+                    <div class="ml-4">
+                        <h1 class="text-2xl font-bold text-gray-900">Central University of Kashmir</h1>
+                        <p class="text-gray-600">Database-Driven Academic Portal</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="userInfo" class="hidden text-right">
+                        <p class="text-sm font-medium text-gray-900" id="userName"></p>
+                        <p class="text-xs text-gray-600" id="userRole"></p>
+                    </div>
+                    <a href="admin-login.html" 
+                       class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-red-600 text-white hover:bg-red-700 text-sm flex items-center space-x-2">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                        </svg>
+                        <span>Admin Portal</span>
+                    </a>
+                    <button onclick="logout()" id="logoutBtn" class="px-6 py-3 rounded-lg font-semibold transition-all duration-300 bg-red-600 text-white hover:bg-red-700 hidden">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
+            <div class="loading-spinner"></div>
+            <span class="text-gray-700">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="premium-card rounded-2xl p-10 max-w-lg w-full mx-4">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 university-primary rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold text-white">User Login</h2>
+                <p class="text-gray-200 mt-3 font-medium">Central University of Kashmir</p>
+                <div class="w-16 h-1 bg-gray-400 rounded-full mx-auto mt-2"></div>
+            </div>
+            
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-white mb-3">User Type</label>
+                    <select id="userType" class="professional-input w-full px-5 py-4 rounded-xl font-medium text-slate-800" required>
+                        <option value="">Select User Type</option>
+                        <option value="student">Student</option>
+                        <option value="faculty">Faculty</option>
+                    </select>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-white mb-3">Email Address</label>
+                    <input type="email" id="loginEmail" class="professional-input w-full px-5 py-4 rounded-xl font-medium text-slate-800" placeholder="Enter your email address" required>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-white mb-3">Password</label>
+                    <input type="password" id="loginPassword" class="professional-input w-full px-5 py-4 rounded-xl font-medium text-slate-800" placeholder="Enter your password" required>
+                </div>
+                
+                <button type="submit" class="w-full executive-button text-white py-4 px-6 rounded-xl font-bold text-lg">
+                    Login
+                </button>
+            </form>
+            
+            <div class="mt-8 p-6 bg-slate-50 bg-opacity-20 rounded-xl border border-slate-200">
+                <h4 class="font-bold text-sm text-white mb-3">Demo Credentials</h4>
+                <div class="text-sm text-gray-200 space-y-2 font-medium">
+                    <div>Student: <code class="bg-slate-700 px-2 py-1 rounded">demo@student.com / demo123</code></div>
+                    <div>Faculty: <code class="bg-slate-700 px-2 py-1 rounded">demo@faculty.com / demo123</code></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div id="mainContent" class="hidden">
+        <!-- Student Dashboard -->
+        <div id="studentDashboard" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 hidden">
+            <div class="fade-in">
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">Student Dashboard</h2>
+                    
+                    <!-- Student Navigation -->
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <button onclick="showStudentTab('profile')" id="studentProfileTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 tab-active">Profile</button>
+                        <button onclick="showStudentTab('marks')" id="studentMarksTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">Marks</button>
+                        <button onclick="showStudentTab('attendance')" id="studentAttendanceTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">Attendance</button>
+                        <button onclick="showStudentTab('notices')" id="studentNoticesTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">Notices</button>
+                        <button onclick="showStudentTab('resources')" id="studentResourcesTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">Resources</button>
+                    </div>
+
+                    <!-- Student Profile -->
+                    <div id="studentProfile" class="student-content">
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-900">Student Profile</h3>
+                            <div id="studentProfileData" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Profile data will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Marks -->
+                    <div id="studentMarks" class="student-content hidden">
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-900">Academic Performance</h3>
+                            <div id="studentMarksData">
+                                <!-- Marks data will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Attendance -->
+                    <div id="studentAttendance" class="student-content hidden">
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-900">Attendance Records</h3>
+                            <div id="studentAttendanceData">
+                                <!-- Attendance data will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Notices -->
+                    <div id="studentNotices" class="student-content hidden">
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-900">Notices & Announcements</h3>
+                            <div id="studentNoticesData">
+                                <!-- Notices data will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Resources -->
+                    <div id="studentResources" class="student-content hidden">
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-900">Learning Resources</h3>
+                            <div id="studentResourcesData">
+                                <!-- Resources data will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teacher Dashboard -->
+        <div id="teacherDashboard" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 hidden">
+            <div class="fade-in">
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">Teacher Dashboard</h2>
+                    
+                    <!-- Teacher Navigation -->
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <button onclick="showTeacherTab('students')" id="teacherStudentsTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 tab-active">Students</button>
+                        <button onclick="showTeacherTab('marks')" id="teacherMarksTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">Manage Marks</button>
+                        <button onclick="showTeacherTab('attendance')" id="teacherAttendanceTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">Attendance</button>
+                        <button onclick="showTeacherTab('notices')" id="teacherNoticesTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">Notices</button>
+                    </div>
+
+                    <!-- Teacher Students -->
+                    <div id="teacherStudents" class="teacher-content">
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-900">My Students</h3>
+                            <div id="teacherStudentsData">
+                                <!-- Students data will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Teacher Marks Management -->
+                    <div id="teacherMarks" class="teacher-content hidden">
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-900">Marks Management</h3>
+                            <div id="teacherMarksData">
+                                <!-- Marks management will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Teacher Attendance -->
+                    <div id="teacherAttendance" class="teacher-content hidden">
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-900">Attendance Management</h3>
+                            <div id="teacherAttendanceData">
+                                <!-- Attendance management will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Teacher Notices -->
+                    <div id="teacherNotices" class="teacher-content hidden">
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-900">Notice Management</h3>
+                            <div id="teacherNoticesData">
+                                <!-- Notice management will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let authToken = null;
+
+        // API Base URL
+        const API_BASE = '/api';
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+        });
+
+        // Check if user is already logged in
+        function checkAuthStatus() {
+            const token = localStorage.getItem('authToken');
+            const user = localStorage.getItem('currentUser');
+            
+            if (token && user) {
+                authToken = token;
+                currentUser = JSON.parse(user);
+                showDashboard();
+            } else {
+                showLoginModal();
+            }
+        }
+
+        // Show login modal
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+        }
+
+        // Handle login form submission
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const userType = document.getElementById('userType').value;
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!userType || !email || !password) {
+                showAlert('Please fill in all fields', 'error');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        role: userType
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Store authentication data
+                    authToken = result.data.token;
+                    currentUser = result.data.user;
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                    // Hide login modal and show dashboard
+                    document.getElementById('loginModal').classList.add('hidden');
+                    showDashboard();
+                    showAlert('Login successful!', 'success');
+                } else {
+                    showAlert(result.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('Network error. Please try again.', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Show appropriate dashboard based on user role
+        function showDashboard() {
+            document.getElementById('mainContent').classList.remove('hidden');
+            
+            // Update header with user info
+            document.getElementById('userName').textContent = currentUser.name;
+            const roleText = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+            const designationText = currentUser.profile?.designation ? ` (${currentUser.profile.designation})` : '';
+            document.getElementById('userRole').textContent = roleText + designationText;
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+
+            if (currentUser.role === 'student') {
+                document.getElementById('studentDashboard').classList.remove('hidden');
+                document.getElementById('teacherDashboard').classList.add('hidden');
+                loadStudentData();
+            } else if (currentUser.role === 'faculty') {
+                document.getElementById('teacherDashboard').classList.remove('hidden');
+                document.getElementById('studentDashboard').classList.add('hidden');
+                loadTeacherData();
+            }
+        }
+
+        // Load student data
+        async function loadStudentData() {
+            showStudentTab('profile');
+            await loadStudentProfile();
+        }
+
+        // Load teacher data
+        async function loadTeacherData() {
+            showTeacherTab('students');
+            await loadTeacherStudents();
+        }
+
+        // Student tab navigation
+        function showStudentTab(tabName) {
+            // Hide all student content
+            document.querySelectorAll('.student-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('[id^="student"][id$="Tab"]').forEach(tab => {
+                tab.className = 'px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700';
+            });
+            
+            // Show selected content and activate tab
+            document.getElementById('student' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.remove('hidden');
+            document.getElementById('student' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Tab').className = 'px-4 py-2 rounded-lg font-medium transition-all duration-300 tab-active';
+            
+            // Load data for the selected tab
+            switch(tabName) {
+                case 'profile':
+                    loadStudentProfile();
+                    break;
+                case 'marks':
+                    loadStudentMarks();
+                    break;
+                case 'attendance':
+                    loadStudentAttendance();
+                    break;
+                case 'notices':
+                    loadStudentNotices();
+                    break;
+                case 'resources':
+                    loadStudentResources();
+                    break;
+            }
+        }
+
+        // Teacher tab navigation
+        function showTeacherTab(tabName) {
+            // Hide all teacher content
+            document.querySelectorAll('.teacher-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('[id^="teacher"][id$="Tab"]').forEach(tab => {
+                tab.className = 'px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700';
+            });
+            
+            // Show selected content and activate tab
+            document.getElementById('teacher' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.remove('hidden');
+            document.getElementById('teacher' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Tab').className = 'px-4 py-2 rounded-lg font-medium transition-all duration-300 tab-active';
+            
+            // Load data for the selected tab
+            switch(tabName) {
+                case 'students':
+                    loadTeacherStudents();
+                    break;
+                case 'marks':
+                    loadTeacherMarks();
+                    break;
+                case 'attendance':
+                    loadTeacherAttendance();
+                    break;
+                case 'notices':
+                    loadTeacherNotices();
+                    break;
+            }
+        }
+
+        // API call helper function
+        async function apiCall(endpoint, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                }
+            };
+
+            const finalOptions = {
+                ...defaultOptions,
+                ...options,
+                headers: {
+                    ...defaultOptions.headers,
+                    ...options.headers
+                }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, finalOptions);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'API call failed');
+                }
+
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+
+        // Load student profile
+        async function loadStudentProfile() {
+            try {
+                showLoading(true);
+                const result = await apiCall('/student/profile');
+                
+                if (result.success && result.data) {
+                    const data = result.data;
+                    const profileHtml = `
+                        <div class="bg-white p-4 rounded-lg">
+                            <h4 class="font-semibold text-gray-900 mb-2">Personal Information</h4>
+                            <p><strong>Name:</strong> ${data.name || 'Not provided'}</p>
+                            <p><strong>Email:</strong> ${data.email || 'Not provided'}</p>
+                            <p><strong>Student ID:</strong> ${data.rollNumber || 'Not assigned'}</p>
+                            <p><strong>Status:</strong> <span class="px-2 py-1 rounded text-sm ${data.isActive ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${data.isActive ? 'Active' : 'Inactive'}</span></p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg">
+                            <h4 class="font-semibold text-gray-900 mb-2">Academic Information</h4>
+                            <p><strong>Course:</strong> ${data.course || 'Not assigned'}</p>
+                            <p><strong>Semester:</strong> ${data.semester || 'Not assigned'}</p>
+                            <p><strong>Department:</strong> ${data.department || 'Not assigned'}</p>
+                            <p><strong>CGPA:</strong> ${data.cgpa || 'Not calculated'}</p>
+                            <p><strong>Enrollment Year:</strong> ${data.enrollmentYear || 'Not provided'}</p>
+                        </div>
+                    `;
+                    
+                    document.getElementById('studentProfileData').innerHTML = profileHtml;
+                } else {
+                    throw new Error('Invalid response format');
+                }
+            } catch (error) {
+                console.error('Load student profile error:', error);
+                document.getElementById('studentProfileData').innerHTML = '<p class="text-red-600">Error loading profile data</p>';
+                showAlert('Failed to load profile data', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load student marks
+        async function loadStudentMarks() {
+            try {
+                showLoading(true);
+                const result = await apiCall('/student/marks');
+                
+                if (result.success && result.data && result.data.marks) {
+                    const marks = result.data.marks;
+                    if (marks.length > 0) {
+                        const marksHtml = marks.map(mark => `
+                            <div class="bg-white p-4 rounded-lg border">
+                                <h4 class="font-semibold text-gray-900 mb-2">${mark.subject}</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                    <div><strong>Exam Type:</strong> ${mark.examType || 'Not specified'}</div>
+                                    <div><strong>Marks:</strong> ${mark.totalMarks || 0}/${mark.maxMarks || 100}</div>
+                                    <div><strong>Percentage:</strong> ${mark.percentage || 0}%</div>
+                                    <div><strong>Credits:</strong> ${mark.credits || 0}</div>
+                                </div>
+                                <div class="mt-2 flex justify-between items-center">
+                                    <span class="px-2 py-1 rounded text-white grade-${mark.grade || 'F'}">${mark.grade || 'Not Graded'}</span>
+                                    <span class="text-xs text-gray-500">Faculty: ${mark.facultyName || 'Unknown'}</span>
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        document.getElementById('studentMarksData').innerHTML = marksHtml;
+                    } else {
+                        document.getElementById('studentMarksData').innerHTML = '<p class="text-gray-600">No marks available yet</p>';
+                    }
+                } else {
+                    document.getElementById('studentMarksData').innerHTML = '<p class="text-gray-600">No marks available yet</p>';
+                }
+            } catch (error) {
+                console.error('Load student marks error:', error);
+                document.getElementById('studentMarksData').innerHTML = '<p class="text-red-600">Error loading marks data</p>';
+                showAlert('Failed to load marks data', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load student attendance
+        async function loadStudentAttendance() {
+            try {
+                showLoading(true);
+                const result = await apiCall('/student/attendance');
+                
+                if (result.success && result.data && result.data.attendance) {
+                    const attendance = result.data.attendance;
+                    if (attendance.length > 0) {
+                        const attendanceHtml = attendance.map(record => `
+                            <div class="bg-white p-4 rounded-lg border">
+                                <h4 class="font-semibold text-gray-900 mb-2">${record.subject}</h4>
+                                <div class="grid grid-cols-2 gap-2 text-sm">
+                                    <div><strong>Date:</strong> ${new Date(record.date).toLocaleDateString()}</div>
+                                    <div><strong>Status:</strong> 
+                                        <span class="px-2 py-1 rounded text-sm ${record.status === 'present' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                            ${record.status}
+                                        </span>
+                                    </div>
+                                    <div><strong>Class Type:</strong> ${record.classType || 'Lecture'}</div>
+                                    <div><strong>Duration:</strong> ${record.duration || 60} minutes</div>
+                                    <div><strong>Faculty:</strong> ${record.facultyName || 'Unknown'}</div>
+                                    <div><strong>Semester:</strong> ${record.semester || 'N/A'}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        document.getElementById('studentAttendanceData').innerHTML = attendanceHtml;
+                    } else {
+                        document.getElementById('studentAttendanceData').innerHTML = '<p class="text-gray-600">No attendance records available</p>';
+                    }
+                } else {
+                    document.getElementById('studentAttendanceData').innerHTML = '<p class="text-gray-600">No attendance records available</p>';
+                }
+            } catch (error) {
+                console.error('Load student attendance error:', error);
+                document.getElementById('studentAttendanceData').innerHTML = '<p class="text-red-600">Error loading attendance data</p>';
+                showAlert('Failed to load attendance data', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load student notices
+        async function loadStudentNotices() {
+            try {
+                showLoading(true);
+                const result = await apiCall('/student/notices');
+                
+                if (result.success && result.data && result.data.notices) {
+                    const notices = result.data.notices;
+                    if (notices.length > 0) {
+                        const noticesHtml = notices.map(notice => `
+                            <div class="bg-white p-4 rounded-lg border border-l-4 ${notice.priority === 'urgent' ? 'border-red-500' : notice.priority === 'important' ? 'border-yellow-500' : 'border-blue-500'}">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-semibold text-gray-900">${notice.title}</h4>
+                                    <span class="px-2 py-1 rounded text-sm ${notice.priority === 'urgent' ? 'bg-red-100 text-red-800' : notice.priority === 'important' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">
+                                        ${notice.priority}
+                                    </span>
+                                </div>
+                                <p class="text-gray-700 text-sm mb-2">${notice.content}</p>
+                                <div class="flex justify-between items-center text-xs text-gray-500">
+                                    <span>Published: ${new Date(notice.publishDate).toLocaleDateString()}</span>
+                                    <span>By: ${notice.facultyName || 'Administration'}</span>
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        document.getElementById('studentNoticesData').innerHTML = noticesHtml;
+                    } else {
+                        document.getElementById('studentNoticesData').innerHTML = '<p class="text-gray-600">No notices available</p>';
+                    }
+                } else {
+                    document.getElementById('studentNoticesData').innerHTML = '<p class="text-gray-600">No notices available</p>';
+                }
+            } catch (error) {
+                console.error('Load student notices error:', error);
+                document.getElementById('studentNoticesData').innerHTML = '<p class="text-red-600">Error loading notices</p>';
+                showAlert('Failed to load notices', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load student resources
+        async function loadStudentResources() {
+            try {
+                showLoading(true);
+                const result = await apiCall('/student/resources');
+                
+                if (result.success && result.data && result.data.resources) {
+                    const resources = result.data.resources;
+                    if (resources.length > 0) {
+                        const resourcesHtml = resources.map(resource => `
+                            <div class="bg-white p-4 rounded-lg border">
+                                <h4 class="font-semibold text-gray-900 mb-2">${resource.title}</h4>
+                                <p class="text-gray-700 text-sm mb-2">${resource.description || 'No description available'}</p>
+                                <div class="flex justify-between items-center">
+                                    <div class="text-xs text-gray-500">
+                                        <div>Subject: ${resource.subject || 'General'}</div>
+                                        <div>Type: ${resource.resourceType || 'Document'}</div>
+                                        <div>Faculty: ${resource.facultyName || 'Unknown'}</div>
+                                    </div>
+                                    <button onclick="downloadResource('${resource.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                                        Download
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        document.getElementById('studentResourcesData').innerHTML = resourcesHtml;
+                    } else {
+                        document.getElementById('studentResourcesData').innerHTML = '<p class="text-gray-600">No resources available</p>';
+                    }
+                } else {
+                    document.getElementById('studentResourcesData').innerHTML = '<p class="text-gray-600">No resources available</p>';
+                }
+            } catch (error) {
+                console.error('Load student resources error:', error);
+                document.getElementById('studentResourcesData').innerHTML = '<p class="text-red-600">Error loading resources</p>';
+                showAlert('Failed to load resources', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load teacher students
+        async function loadTeacherStudents() {
+            try {
+                showLoading(true);
+                const result = await apiCall('/teacher/students');
+                
+                if (result.success && result.data) {
+                    const students = result.data;
+                    if (students.length > 0) {
+                        const studentsHtml = `
+                            <div class="overflow-x-auto">
+                                <table class="w-full bg-white rounded-lg">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left font-semibold text-gray-900">Student ID</th>
+                                            <th class="px-4 py-3 text-left font-semibold text-gray-900">Name</th>
+                                            <th class="px-4 py-3 text-left font-semibold text-gray-900">Email</th>
+                                            <th class="px-4 py-3 text-left font-semibold text-gray-900">Course</th>
+                                            <th class="px-4 py-3 text-left font-semibold text-gray-900">Semester</th>
+                                            <th class="px-4 py-3 text-left font-semibold text-gray-900">CGPA</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${students.map(student => `
+                                            <tr class="border-b hover:bg-gray-50">
+                                                <td class="px-4 py-3 text-gray-900">${student.rollNumber || 'Not assigned'}</td>
+                                                <td class="px-4 py-3 text-gray-900">${student.name}</td>
+                                                <td class="px-4 py-3 text-gray-900">${student.email}</td>
+                                                <td class="px-4 py-3 text-gray-900">${student.course || 'Not assigned'}</td>
+                                                <td class="px-4 py-3 text-gray-900">${student.semester || 'Not assigned'}</td>
+                                                <td class="px-4 py-3 text-gray-900">${student.cgpa || 'Not calculated'}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                        
+                        document.getElementById('teacherStudentsData').innerHTML = studentsHtml;
+                    } else {
+                        document.getElementById('teacherStudentsData').innerHTML = '<p class="text-gray-600">No students found</p>';
+                    }
+                } else {
+                    document.getElementById('teacherStudentsData').innerHTML = '<p class="text-gray-600">No students found</p>';
+                }
+            } catch (error) {
+                console.error('Load teacher students error:', error);
+                document.getElementById('teacherStudentsData').innerHTML = '<p class="text-red-600">Error loading students data</p>';
+                showAlert('Failed to load students data', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load teacher marks management
+        async function loadTeacherMarks() {
+            document.getElementById('teacherMarksData').innerHTML = `
+                <div class="bg-white p-6 rounded-lg">
+                    <h4 class="font-semibold text-gray-900 mb-4">Marks Management</h4>
+                    <p class="text-gray-600 mb-4">Select students and subjects to manage marks</p>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                            <select class="w-full px-3 py-2 border rounded-lg">
+                                <option>Mathematics</option>
+                                <option>Physics</option>
+                                <option>Chemistry</option>
+                                <option>Computer Science</option>
+                            </select>
+                        </div>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                            Load Student Marks
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Load teacher attendance management
+        async function loadTeacherAttendance() {
+            document.getElementById('teacherAttendanceData').innerHTML = `
+                <div class="bg-white p-6 rounded-lg">
+                    <h4 class="font-semibold text-gray-900 mb-4">Attendance Management</h4>
+                    <p class="text-gray-600 mb-4">Mark attendance for your classes</p>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Class/Subject</label>
+                            <select class="w-full px-3 py-2 border rounded-lg">
+                                <option>Mathematics - Year 1</option>
+                                <option>Physics - Year 2</option>
+                                <option>Chemistry - Year 1</option>
+                            </select>
+                        </div>
+                        <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                            Take Attendance
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Load teacher notices
+        async function loadTeacherNotices() {
+            try {
+                showLoading(true);
+                const result = await apiCall('/teacher/notices');
+                
+                const noticesHtml = `
+                    <div class="space-y-6">
+                        <!-- Create Notice Form -->
+                        <div class="bg-white p-6 rounded-lg">
+                            <h4 class="font-semibold text-gray-900 mb-4">Create New Notice</h4>
+                            <form onsubmit="createNotice(event)">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                                        <input type="text" id="noticeTitle" class="w-full px-3 py-2 border rounded-lg" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                                        <select id="noticePriority" class="w-full px-3 py-2 border rounded-lg">
+                                            <option value="normal">Normal</option>
+                                            <option value="important">Important</option>
+                                            <option value="urgent">Urgent</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Content</label>
+                                    <textarea id="noticeContent" class="w-full px-3 py-2 border rounded-lg" rows="4" required></textarea>
+                                </div>
+                                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                                    Publish Notice
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Published Notices -->
+                        <div class="bg-white p-6 rounded-lg">
+                            <h4 class="font-semibold text-gray-900 mb-4">Published Notices</h4>
+                            <div id="publishedNoticesList">
+                                ${result.success && result.data && result.data.length > 0 ? 
+                                    result.data.map(notice => `
+                                        <div class="border rounded-lg p-4 mb-4 border-l-4 ${notice.priority === 'urgent' ? 'border-red-500' : notice.priority === 'important' ? 'border-yellow-500' : 'border-blue-500'}">
+                                            <div class="flex justify-between items-start mb-2">
+                                                <h5 class="font-semibold text-gray-900">${notice.title}</h5>
+                                                <span class="px-2 py-1 rounded text-sm ${notice.priority === 'urgent' ? 'bg-red-100 text-red-800' : notice.priority === 'important' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">
+                                                    ${notice.priority}
+                                                </span>
+                                            </div>
+                                            <p class="text-gray-700 text-sm mb-2">${notice.content}</p>
+                                            <div class="flex justify-between items-center text-xs text-gray-500">
+                                                <span>Published: ${new Date(notice.publishDate).toLocaleDateString()}</span>
+                                                <span>Views: ${notice.viewCount || 0}</span>
+                                            </div>
+                                        </div>
+                                    `).join('') : 
+                                    '<p class="text-gray-600">No notices published yet</p>'
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('teacherNoticesData').innerHTML = noticesHtml;
+            } catch (error) {
+                console.error('Load teacher notices error:', error);
+                document.getElementById('teacherNoticesData').innerHTML = '<p class="text-red-600">Error loading notices</p>';
+                showAlert('Failed to load notices', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Create notice
+        async function createNotice(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('noticeTitle').value;
+            const priority = document.getElementById('noticePriority').value;
+            const content = document.getElementById('noticeContent').value;
+
+            try {
+                showLoading(true);
+                const result = await apiCall('/teacher/notice', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        title: title,
+                        content: content,
+                        priority: priority,
+                        targetGroup: { allStudents: true }
+                    })
+                });
+
+                if (result.success) {
+                    showAlert('Notice published successfully!', 'success');
+                    loadTeacherNotices(); // Reload notices
+                    
+                    // Clear form
+                    document.getElementById('noticeTitle').value = '';
+                    document.getElementById('noticeContent').value = '';
+                    document.getElementById('noticePriority').value = 'normal';
+                } else {
+                    showAlert(result.message || 'Failed to publish notice', 'error');
+                }
+            } catch (error) {
+                console.error('Create notice error:', error);
+                showAlert('Failed to publish notice', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Download resource
+        async function downloadResource(resourceId) {
+            try {
+                const response = await fetch(`${API_BASE}/student/resource/${resourceId}/download`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'resource';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    showAlert('Failed to download resource', 'error');
+                }
+            } catch (error) {
+                showAlert('Error downloading resource', 'error');
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            authToken = null;
+            currentUser = null;
+            
+            // Hide main content and show login
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('userInfo').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            showLoginModal();
+            
+            showAlert('Logged out successfully', 'success');
+        }
+
+        // Show loading overlay
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                overlay.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // Show alert messages
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                'bg-blue-500 text-white'
+            }`;
+            alertDiv.textContent = message;
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

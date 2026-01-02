@@ -4525,6 +4525,12 @@
             
             console.log("🔍 Registration data:", { firstName, lastName, email, userType });
             
+            // Validate user type is selected
+            if (!userType) {
+                alert('❌ Registration Type Required!\n\nPlease select whether you are registering as a Student or Faculty member.');
+                return;
+            }
+            
             // Validate passwords match
             if (password !== confirmPassword) {
                 alert('❌ Password Mismatch!\n\nThe passwords you entered do not match. Please make sure both password fields contain the same password.');
@@ -4551,6 +4557,7 @@
             
             try {
                 console.log("🔍 Making registration request to:", `${BACKEND_URL}/api/auth/register`);
+                console.log("🔍 Sending userType:", userType, "which will become role:", userType === 'faculty' ? 'teacher' : 'student');
                 
                 // Make API call to registration endpoint
                 const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
@@ -4563,7 +4570,7 @@
                         email: email,
                         password: password,
                         phone: phone,
-                        userType: userType
+                        userType: userType // This will be converted to role in backend
                     })
                 });
 
@@ -4572,7 +4579,8 @@
                 console.log("🔍 Registration response data:", data);
 
                 if (data.success) {
-                    alert(`✅ Registration Successful!\n\n👤 Name: ${firstName} ${lastName}\n📧 Email: ${email}\n\n📋 Next Steps:\n• Your registration has been submitted\n• You can now login with your credentials\n• Welcome to the Academic Portal!`);
+                    const roleText = userType === 'faculty' ? 'Faculty' : 'Student';
+                    alert(`✅ ${roleText} Registration Successful!\n\n👤 Name: ${firstName} ${lastName}\n📧 Email: ${email}\n🎭 Role: ${roleText}\n\n📋 Next Steps:\n• Your ${roleText.toLowerCase()} account has been created\n• You can now login with your credentials\n• Welcome to the Academic Portal!`);
                     closeRegistrationModal();
                 } else {
                     alert(`❌ Registration Failed!\n\n${data.message || 'Please try again.'}`);
@@ -4774,6 +4782,45 @@
                     const marksData = await marksResponse.json();
                     console.log("🔍 Student marks data:", marksData);
                     updateStudentMarks(marksData.data);
+                }
+                
+                // Load notices
+                const noticesResponse = await fetch(`${BACKEND_URL}/api/student/notices`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (noticesResponse.ok) {
+                    const noticesData = await noticesResponse.json();
+                    console.log("🔍 Student notices data:", noticesData);
+                    updateStudentNotices(noticesData.data);
+                }
+                
+                // Load resources
+                const resourcesResponse = await fetch(`${BACKEND_URL}/api/student/resources`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (resourcesResponse.ok) {
+                    const resourcesData = await resourcesResponse.json();
+                    console.log("🔍 Student resources data:", resourcesData);
+                    updateStudentResources(resourcesData.data);
+                }
+                
+                // Load leave applications
+                const leavesResponse = await fetch(`${BACKEND_URL}/api/student/leaves`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (leavesResponse.ok) {
+                    const leavesData = await leavesResponse.json();
+                    console.log("🔍 Student leaves data:", leavesData);
+                    updateStudentLeaves(leavesData.data);
                 }
                 
             } catch (error) {
@@ -5044,15 +5091,37 @@
                 courseElements.forEach(el => el.textContent = data.student.course);
             }
             
-            // Update summary statistics
+            // Update summary statistics with empty state handling
             if (data.summary) {
                 // Update attendance percentage
                 const attendanceElements = document.querySelectorAll('.attendance-percentage');
-                attendanceElements.forEach(el => el.textContent = `${data.summary.averageAttendance.toFixed(1)}%`);
+                attendanceElements.forEach(el => {
+                    if (data.summary.totalSubjects === 0) {
+                        el.textContent = 'No data yet';
+                        el.className = el.className.replace(/text-\w+-\d+/, 'text-gray-500');
+                    } else {
+                        el.textContent = `${data.summary.averageAttendance.toFixed(1)}%`;
+                        el.className = el.className.replace(/text-\w+-\d+/, data.summary.averageAttendance >= 75 ? 'text-green-600' : 'text-red-600');
+                    }
+                });
                 
                 // Update average marks
                 const marksElements = document.querySelectorAll('.average-marks');
-                marksElements.forEach(el => el.textContent = `${data.summary.averageMarks.toFixed(1)}%`);
+                marksElements.forEach(el => {
+                    if (data.summary.totalSubjects_marks === 0) {
+                        el.textContent = 'No data yet';
+                        el.className = el.className.replace(/text-\w+-\d+/, 'text-gray-500');
+                    } else {
+                        el.textContent = `${data.summary.averageMarks.toFixed(1)}%`;
+                        el.className = el.className.replace(/text-\w+-\d+/, data.summary.averageMarks >= 60 ? 'text-green-600' : 'text-red-600');
+                    }
+                });
+                
+                // Update subject counts
+                const subjectCountElements = document.querySelectorAll('.subject-count');
+                subjectCountElements.forEach(el => {
+                    el.textContent = data.summary.totalSubjects || 0;
+                });
             }
         }
         
@@ -5066,6 +5135,24 @@
             
             // Clear existing data
             attendanceTableBody.innerHTML = '';
+            
+            // Show empty state if no data
+            if (!attendanceData || attendanceData.length === 0) {
+                attendanceTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-6 py-8 text-center text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-12 h-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">No Attendance Data</h3>
+                                <p class="text-gray-500">Your attendance records will appear here once your teachers start taking attendance.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
             
             // Populate with personalized data
             attendanceData.forEach(record => {
@@ -5088,40 +5175,347 @@
         function updateStudentMarks(marksData) {
             console.log("🔍 Updating marks with:", marksData);
             
+            // Find marks containers for different subjects
+            const subjectContainers = {
+                'mathematics': document.getElementById('mathematicsMarks'),
+                'physics': document.getElementById('physicsMarks'),
+                'chemistry': document.getElementById('chemistryMarks'),
+                'computer-science': document.getElementById('computerScienceMarks')
+            };
+            
+            // Show empty state if no data
+            if (!marksData || marksData.length === 0) {
+                Object.values(subjectContainers).forEach(container => {
+                    if (container) {
+                        container.innerHTML = `
+                            <div class="text-center py-8">
+                                <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">No Marks Available</h3>
+                                <p class="text-gray-500">Your marks will appear here once your teachers enter them.</p>
+                            </div>
+                        `;
+                    }
+                });
+                return;
+            }
+            
             // Group marks by subject
             const marksBySubject = {};
             marksData.forEach(record => {
-                if (!marksBySubject[record.subject]) {
-                    marksBySubject[record.subject] = [];
+                const subjectKey = record.subject.toLowerCase().replace(/\s+/g, '-');
+                if (!marksBySubject[subjectKey]) {
+                    marksBySubject[subjectKey] = [];
                 }
-                marksBySubject[record.subject].push(record);
+                marksBySubject[subjectKey].push(record);
             });
             
-            // Update subject-specific marks tables
-            Object.keys(marksBySubject).forEach(subject => {
-                const tableId = `${subject.toLowerCase().replace(/\s+/g, '')}MarksTable`;
-                const tableBody = document.getElementById(tableId);
+            // Update each subject container
+            Object.keys(subjectContainers).forEach(subjectKey => {
+                const container = subjectContainers[subjectKey];
+                if (!container) return;
                 
-                if (tableBody) {
-                    tableBody.innerHTML = '';
+                if (marksBySubject[subjectKey] && marksBySubject[subjectKey].length > 0) {
+                    // Show marks data
+                    let tableHTML = `
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Component</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Marks</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grade</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                    `;
                     
-                    marksBySubject[subject].forEach(record => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${record.examType}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.marksObtained}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.totalMarks}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.percentage.toFixed(1)}%</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium grade-${record.grade.replace('+', 'plus')}">
-                                    ${record.grade}
-                                </span>
-                            </td>
+                    const subjectMarks = marksBySubject[subjectKey][0]; // Get the latest marks record
+                    const components = [
+                        { name: 'Test 1', value: subjectMarks.marks.test1, max: 15 },
+                        { name: 'Test 2', value: subjectMarks.marks.test2, max: 15 },
+                        { name: 'Presentation', value: subjectMarks.marks.presentation, max: 10 },
+                        { name: 'Assignment', value: subjectMarks.marks.assignment, max: 5 },
+                        { name: 'Attendance', value: subjectMarks.marks.attendance, max: 5 }
+                    ];
+                    
+                    components.forEach(component => {
+                        tableHTML += `
+                            <tr>
+                                <td class="px-4 py-3 text-sm text-gray-900">${component.name}</td>
+                                <td class="px-4 py-3 text-sm text-gray-500">${component.value || 0}/${component.max}</td>
+                                <td class="px-4 py-3 text-sm">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium grade-${subjectMarks.grade.replace('+', 'plus')}">
+                                        ${component.value > 0 ? getComponentGrade(component.value, component.max) : '-'}
+                                    </span>
+                                </td>
+                            </tr>
                         `;
-                        tableBody.appendChild(row);
                     });
+                    
+                    tableHTML += `
+                                    <tr class="bg-gray-50 font-semibold">
+                                        <td class="px-4 py-3 text-sm text-gray-900">Total</td>
+                                        <td class="px-4 py-3 text-sm text-gray-900">${subjectMarks.total}/50</td>
+                                        <td class="px-4 py-3 text-sm">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium grade-${subjectMarks.grade.replace('+', 'plus')}">
+                                                ${subjectMarks.grade}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    container.innerHTML = tableHTML;
+                } else {
+                    // Show empty state for this subject
+                    container.innerHTML = `
+                        <div class="text-center py-8">
+                            <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">No Marks for ${subjectKey.replace('-', ' ').toUpperCase()}</h3>
+                            <p class="text-gray-500">Marks for this subject will appear once your teacher enters them.</p>
+                        </div>
+                    `;
                 }
             });
+        }
+        
+        // Helper function to calculate component grade
+        function getComponentGrade(marks, maxMarks) {
+            const percentage = (marks / maxMarks) * 100;
+            if (percentage >= 90) return 'A+';
+            if (percentage >= 80) return 'A';
+            if (percentage >= 70) return 'B+';
+            if (percentage >= 60) return 'B';
+            if (percentage >= 50) return 'C';
+            if (percentage >= 40) return 'D';
+            return 'F';
+        }
+        
+        // Update student notices
+        function updateStudentNotices(noticesData) {
+            console.log("🔍 Updating notices with:", noticesData);
+            
+            const noticesContainer = document.getElementById('studentNoticesContainer');
+            if (!noticesContainer) return;
+            
+            if (!noticesData || noticesData.length === 0) {
+                noticesContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No Notices Available</h3>
+                        <p class="text-gray-500">New notices will appear here when published by your teachers.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let noticesHTML = '';
+            noticesData.forEach(notice => {
+                const priorityColor = {
+                    'low': 'bg-gray-100 text-gray-800',
+                    'medium': 'bg-blue-100 text-blue-800',
+                    'high': 'bg-yellow-100 text-yellow-800',
+                    'urgent': 'bg-red-100 text-red-800'
+                };
+                
+                noticesHTML += `
+                    <div class="bg-white rounded-lg shadow p-6 mb-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <h4 class="text-lg font-semibold text-gray-900">${notice.title}</h4>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColor[notice.priority] || 'bg-gray-100 text-gray-800'}">
+                                ${notice.priority.toUpperCase()}
+                            </span>
+                        </div>
+                        <p class="text-gray-700 mb-3">${notice.content}</p>
+                        <div class="flex justify-between items-center text-sm text-gray-500">
+                            <span>By: ${notice.teacherName}</span>
+                            <span>${new Date(notice.publishDate).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            noticesContainer.innerHTML = noticesHTML;
+        }
+        
+        // Update student resources
+        function updateStudentResources(resourcesData) {
+            console.log("🔍 Updating resources with:", resourcesData);
+            
+            const resourcesContainer = document.getElementById('studentResourcesContainer');
+            if (!resourcesContainer) return;
+            
+            if (!resourcesData || resourcesData.length === 0) {
+                resourcesContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No Resources Available</h3>
+                        <p class="text-gray-500">Study materials and resources will appear here when uploaded by your teachers.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let resourcesHTML = '';
+            resourcesData.forEach(resource => {
+                const fileSize = (resource.fileSize / 1024 / 1024).toFixed(2);
+                
+                resourcesHTML += `
+                    <div class="bg-white rounded-lg shadow p-6 mb-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-900">${resource.title}</h4>
+                                <p class="text-sm text-gray-600">${resource.subject} (${resource.subjectCode})</p>
+                            </div>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ${resource.resourceType.replace('_', ' ').toUpperCase()}
+                            </span>
+                        </div>
+                        ${resource.description ? `<p class="text-gray-700 mb-3">${resource.description}</p>` : ''}
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-500">
+                                <span>Size: ${fileSize} MB</span> • 
+                                <span>Downloads: ${resource.downloadCount}</span> • 
+                                <span>By: ${resource.teacherName}</span>
+                            </div>
+                            <button onclick="downloadResource('${resource.id}')" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                                Download
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resourcesContainer.innerHTML = resourcesHTML;
+        }
+        
+        // Update student leave applications
+        function updateStudentLeaves(leavesData) {
+            console.log("🔍 Updating leaves with:", leavesData);
+            
+            const leavesContainer = document.getElementById('studentLeavesContainer');
+            if (!leavesContainer) return;
+            
+            if (!leavesData || leavesData.length === 0) {
+                leavesContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0V6a2 2 0 012-2h4a2 2 0 012 2v1m-6 0h8m-8 0v10a2 2 0 002 2h4a2 2 0 002-2V7m-8 0H4a2 2 0 00-2 2v10a2 2 0 002 2h4m4-10h2m-6 4h6m-6 4h6"></path>
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No Leave Applications</h3>
+                        <p class="text-gray-500">Your leave applications will appear here after you submit them.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let leavesHTML = '';
+            leavesData.forEach(leave => {
+                const statusColor = {
+                    'pending': 'bg-yellow-100 text-yellow-800',
+                    'approved': 'bg-green-100 text-green-800',
+                    'rejected': 'bg-red-100 text-red-800'
+                };
+                
+                leavesHTML += `
+                    <div class="bg-white rounded-lg shadow p-6 mb-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-900">${leave.leaveType.toUpperCase()} Leave</h4>
+                                <p class="text-sm text-gray-600">${new Date(leave.fromDate).toLocaleDateString()} - ${new Date(leave.toDate).toLocaleDateString()} (${leave.totalDays} days)</p>
+                            </div>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor[leave.status]}">
+                                ${leave.status.toUpperCase()}
+                            </span>
+                        </div>
+                        <p class="text-gray-700 mb-3">${leave.reason}</p>
+                        ${leave.reviewComments ? `
+                            <div class="bg-gray-50 rounded p-3 mb-3">
+                                <p class="text-sm text-gray-700"><strong>Review Comments:</strong> ${leave.reviewComments}</p>
+                                ${leave.reviewedBy ? `<p class="text-xs text-gray-500 mt-1">Reviewed by: ${leave.reviewedBy}</p>` : ''}
+                            </div>
+                        ` : ''}
+                        <div class="text-sm text-gray-500">
+                            Applied on: ${new Date(leave.appliedDate).toLocaleDateString()}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            leavesContainer.innerHTML = leavesHTML;
+        }
+        
+        // Download resource function
+        async function downloadResource(resourceId) {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                alert('Please login to download resources');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/student/resource/${resourceId}/download`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    // In a real implementation, this would trigger file download
+                    alert(`Downloading: ${data.data.filename}\nFile URL: ${data.data.fileUrl}`);
+                    // window.open(data.data.fileUrl, '_blank');
+                } else {
+                    alert('Error downloading resource');
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Error downloading resource');
+            }
+        }
+        
+        // Apply for leave function
+        async function applyForLeave(leaveData) {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                alert('Please login to apply for leave');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/student/leave`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(leaveData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Leave application submitted successfully!');
+                    // Reload leave applications
+                    loadStudentData();
+                } else {
+                    alert(`Error: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Apply leave error:', error);
+                alert('Error submitting leave application');
+            }
         }
         
         // Update user name displays throughout the UI

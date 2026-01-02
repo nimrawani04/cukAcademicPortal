@@ -31,8 +31,13 @@ const adminAuth = async (req, res, next) => {
             });
         }
 
-        // Add user info to request
-        req.user = decoded;
+        // Add user info to request (ensure compatibility)
+        req.user = {
+            userId: decoded.userId || decoded.id,
+            id: decoded.userId || decoded.id,
+            email: decoded.email,
+            role: decoded.role
+        };
         next();
 
     } catch (error) {

@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUK Student Portal - Personalized View</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tab-active {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: #ffffff;
+        }
+        .student-card {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .grade-A { background-color: #10b981; color: #ffffff; }
+        .grade-B { background-color: #3b82f6; color: #ffffff; }
+        .grade-C { background-color: #f59e0b; color: #ffffff; }
+        .grade-D { background-color: #ef4444; color: #ffffff; }
+        .grade-F { background-color: #6b7280; color: #ffffff; }
+        .status-present { background-color: #10b981; color: #065f46; }
+        .status-absent { background-color: #ef4444; color: #991b1b; }
+        .status-late { background-color: #f59e0b; color: #92400e; }
+        .empty-state {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border: 2px dashed #d1d5db;
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-blue-600">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center shadow-lg bg-blue-600">
+                        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <h1 class="text-2xl font-bold text-gray-900">CUK Student Portal</h1>
+                        <p class="text-gray-600">Personalized Academic View</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="studentInfo" class="text-right hidden">
+                        <p class="text-sm font-medium text-gray-900" id="studentName"></p>
+                        <p class="text-xs text-blue-600 font-semibold" id="studentRoll"></p>
+                    </div>
+                    <button onclick="logout()" id="logoutBtn" class="px-6 py-3 rounded-lg font-semibold transition-all duration-300 bg-blue-600 text-white hover:bg-blue-700 hidden">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
+            <div class="loading-spinner"></div>
+            <span class="text-gray-700">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Student Login Modal -->
+    <div id="studentLoginModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="student-card rounded-2xl p-10 max-w-lg w-full mx-4">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold text-white">Student Login</h2>
+                <p class="text-gray-200 mt-3 font-medium">Personalized Academic Portal</p>
+                <div class="w-16 h-1 bg-gray-400 rounded-full mx-auto mt-2"></div>
+            </div>
+            
+            <form id="studentLoginForm" onsubmit="handleStudentLogin(event)">
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-white mb-3">Email Address</label>
+                    <input type="email" id="studentEmail" class="w-full px-5 py-4 rounded-xl font-medium text-slate-800" placeholder="Enter student email" required>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-white mb-3">Password</label>
+                    <input type="password" id="studentPassword" class="w-full px-5 py-4 rounded-xl font-medium text-slate-800" placeholder="Enter password" required>
+                </div>
+                
+                <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300">
+                    Student Login
+                </button>
+            </form>
+            
+            <div class="mt-8 p-6 bg-blue-800 bg-opacity-30 rounded-xl border border-blue-400">
+                <h4 class="font-bold text-sm text-white mb-3">Student Credentials</h4>
+                <div class="text-sm text-gray-200 font-medium space-y-1">
+                    <div>Demo Student: <code class="bg-blue-700 px-2 py-1 rounded">demo@student.com / demo123</code></div>
+                    <div>Alice Johnson: <code class="bg-blue-700 px-2 py-1 rounded">alice@student.com / student123</code></div>
+                    <div>Bob Smith: <code class="bg-blue-700 px-2 py-1 rounded">bob@student.com / student123</code></div>
+                    <div>Carol Davis: <code class="bg-blue-700 px-2 py-1 rounded">carol@student.com / student123</code></div>
+                </div>
+            </div>
+        </div>
+    </div>    <!-- Ma
+in Student Dashboard -->
+    <div id="studentDashboard" class="hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Student Overview Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-3xl font-bold text-gray-900">🎓 My Academic Dashboard</h2>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600">Current CGPA</p>
+                        <p class="text-2xl font-bold text-blue-600" id="currentCGPA">-</p>
+                    </div>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div id="quickStats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <!-- Stats will be loaded here -->
+                </div>
+                
+                <!-- Student Navigation -->
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <button onclick="showStudentTab('profile')" id="studentProfileTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 tab-active">
+                        My Profile
+                    </button>
+                    <button onclick="showStudentTab('attendance')" id="studentAttendanceTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Attendance
+                    </button>
+                    <button onclick="showStudentTab('marks')" id="studentMarksTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Marks & Grades
+                    </button>
+                    <button onclick="showStudentTab('courses')" id="studentCoursesTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Course Selection
+                    </button>
+                    <button onclick="showStudentTab('notices')" id="studentNoticesTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Notices
+                    </button>
+                    <button onclick="showStudentTab('resources')" id="studentResourcesTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Resources
+                    </button>
+                    <button onclick="showStudentTab('leaves')" id="studentLeavesTab" class="px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700">
+                        Leave Applications
+                    </button>
+                </div>
+
+                <!-- My Profile Tab -->
+                <div id="studentProfile" class="student-content">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">👤 My Profile Information</h3>
+                        <div id="profileContainer">
+                            <!-- Profile will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Tab -->
+                <div id="studentAttendance" class="student-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">📅 My Attendance Records</h3>
+                        <div id="attendanceContainer">
+                            <!-- Attendance will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Marks & Grades Tab -->
+                <div id="studentMarks" class="student-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">📊 My Marks & Grades</h3>
+                        <div id="marksContainer">
+                            <!-- Marks will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course Selection Tab -->
+                <div id="studentCourses" class="student-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">📚 My Course Selection</h3>
+                        <div id="coursesContainer">
+                            <!-- Courses will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notices Tab -->
+                <div id="studentNotices" class="student-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">📢 My Notices</h3>
+                        <div id="noticesContainer">
+                            <!-- Notices will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resources Tab -->
+                <div id="studentResources" class="student-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">📚 My Learning Resources</h3>
+                        <div id="resourcesContainer">
+                            <!-- Resources will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leave Applications Tab -->
+                <div id="studentLeaves" class="student-content hidden">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-semibold text-gray-900">🏖️ My Leave Applications</h3>
+                            <button onclick="showApplyLeaveModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                ➕ Apply for Leave
+                            </button>
+                        </div>
+                        <div id="leavesContainer">
+                            <!-- Leaves will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+   <!-- Apply Leave Modal -->
+    <div id="applyLeaveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">🏖️ Apply for Leave</h3>
+                <button onclick="closeApplyLeaveModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="applyLeaveForm" onsubmit="handleApplyLeave(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Leave Type *</label>
+                        <select id="leaveType" class="w-full px-3 py-2 border rounded-lg" required>
+                            <option value="sick">Sick Leave</option>
+                            <option value="personal">Personal Leave</option>
+                            <option value="emergency">Emergency Leave</option>
+                            <option value="medical">Medical Leave</option>
+                            <option value="family">Family Emergency</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                        <select id="leavePriority" class="w-full px-3 py-2 border rounded-lg">
+                            <option value="normal">Normal</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">From Date *</label>
+                        <input type="date" id="leaveFromDate" class="w-full px-3 py-2 border rounded-lg" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">To Date *</label>
+                        <input type="date" id="leaveToDate" class="w-full px-3 py-2 border rounded-lg" required>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Leave *</label>
+                    <textarea id="leaveReason" class="w-full px-3 py-2 border rounded-lg" rows="4" placeholder="Please provide detailed reason for leave..." required></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Contact Information</label>
+                    <input type="text" id="leaveContact" class="w-full px-3 py-2 border rounded-lg" placeholder="Phone number or emergency contact">
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-bold hover:bg-blue-700">
+                        Submit Application
+                    </button>
+                    <button type="button" onclick="closeApplyLeaveModal()" class="flex-1 bg-gray-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-gray-600">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentStudent = null;
+        let studentToken = null;
+        const API_BASE = '/api';
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            checkStudentAuth();
+        });
+
+        // Check if student is already logged in
+        function checkStudentAuth() {
+            const token = localStorage.getItem('studentToken');
+            const student = localStorage.getItem('currentStudent');
+            
+            if (token && student) {
+                studentToken = token;
+                currentStudent = JSON.parse(student);
+                showStudentDashboard();
+            } else {
+                showStudentLoginModal();
+            }
+        }
+
+        // Show student login modal
+        function showStudentLoginModal() {
+            document.getElementById('studentLoginModal').classList.remove('hidden');
+            document.getElementById('studentDashboard').classList.add('hidden');
+        }
+
+        // Handle student login
+        async function handleStudentLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('studentEmail').value;
+            const password = document.getElementById('studentPassword').value;
+
+            showLoading(true);
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        email, 
+                        password, 
+                        role: 'student' 
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    studentToken = result.data.token;
+                    currentStudent = result.data.user;
+                    localStorage.setItem('studentToken', studentToken);
+                    localStorage.setItem('currentStudent', JSON.stringify(currentStudent));
+
+                    document.getElementById('studentLoginModal').classList.add('hidden');
+                    showStudentDashboard();
+                    showAlert('Student login successful!', 'success');
+                } else {
+                    showAlert(result.message || 'Student login failed', 'error');
+                }
+            } catch (error) {
+                console.error('Student login error:', error);
+                showAlert('Network error. Please try again.', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Show student dashboard
+        function showStudentDashboard() {
+            document.getElementById('studentDashboard').classList.remove('hidden');
+            
+            // Update header
+            document.getElementById('studentName').textContent = currentStudent.name;
+            document.getElementById('studentRoll').textContent = currentStudent.profile?.rollNumber || 'No Roll Number';
+            document.getElementById('studentInfo').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+
+            // Load dashboard data
+            loadStudentProfile();
+            loadQuickStats();
+        }
+
+        // Student tab navigation
+        function showStudentTab(tabName) {
+            // Hide all student content
+            document.querySelectorAll('.student-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('[id^="student"][id$="Tab"]').forEach(tab => {
+                tab.className = 'px-4 py-2 rounded-lg font-medium transition-all duration-300 bg-gray-200 text-gray-700';
+            });
+            
+            // Show selected content and activate tab
+            document.getElementById('student' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.remove('hidden');
+            document.getElementById('student' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Tab').className = 'px-4 py-2 rounded-lg font-medium transition-all duration-300 tab-active';
+            
+            // Load data for the selected tab
+            switch(tabName) {
+                case 'profile':
+                    loadStudentProfile();
+                    break;
+                case 'attendance':
+                    loadStudentAttendance();
+                    break;
+                case 'marks':
+                    loadStudentMarks();
+                    break;
+                case 'courses':
+                    loadStudentCourses();
+                    break;
+                case 'notices':
+                    loadStudentNotices();
+                    break;
+                case 'resources':
+                    loadStudentResources();
+                    break;
+                case 'leaves':
+                    loadStudentLeaves();
+                    break;
+            }
+        }
+
+        // API call helper
+        async function studentApiCall(endpoint, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${studentToken}`
+                }
+            };
+
+            const finalOptions = {
+                ...defaultOptions,
+                ...options,
+                headers: {
+                    ...defaultOptions.headers,
+                    ...options.headers
+                }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, finalOptions);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'API call failed');
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Student API Error:', error);
+                throw error;
+            }
+        }      
+  // Load quick stats
+        async function loadQuickStats() {
+            try {
+                const result = await studentApiCall('/student/profile');
+                
+                if (result.success) {
+                    const profile = result.data;
+                    document.getElementById('currentCGPA').textContent = profile.cgpa || '0.00';
+                    
+                    const statsHtml = `
+                        <div class="bg-blue-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-blue-600">${profile.semester || 0}</div>
+                            <div class="text-sm text-gray-600">Current Semester</div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-green-600">${profile.cgpa || '0.00'}</div>
+                            <div class="text-sm text-gray-600">CGPA</div>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-purple-600">${profile.enrollmentYear || 'N/A'}</div>
+                            <div class="text-sm text-gray-600">Enrollment Year</div>
+                        </div>
+                        <div class="bg-orange-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-orange-600">${profile.isActive ? 'Active' : 'Inactive'}</div>
+                            <div class="text-sm text-gray-600">Status</div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('quickStats').innerHTML = statsHtml;
+                }
+            } catch (error) {
+                console.error('Load quick stats error:', error);
+            }
+        }
+
+        // Load student profile
+        async function loadStudentProfile() {
+            try {
+                showLoading(true);
+                const result = await studentApiCall('/student/profile');
+                
+                if (result.success) {
+                    const profile = result.data;
+                    const profileHtml = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h4 class="font-semibold text-gray-900 mb-4">Personal Information</h4>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Full Name:</span>
+                                        <span class="font-medium">${profile.name}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Email:</span>
+                                        <span class="font-medium">${profile.email}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Roll Number:</span>
+                                        <span class="font-medium">${profile.rollNumber || 'Not assigned'}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Status:</span>
+                                        <span class="px-2 py-1 rounded text-sm ${profile.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                            ${profile.isActive ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h4 class="font-semibold text-gray-900 mb-4">Academic Information</h4>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Course:</span>
+                                        <span class="font-medium">${profile.course || 'Not assigned'}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Department:</span>
+                                        <span class="font-medium">${profile.department || 'Not assigned'}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Current Semester:</span>
+                                        <span class="font-medium">${profile.semester || 'Not assigned'}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Enrollment Year:</span>
+                                        <span class="font-medium">${profile.enrollmentYear || 'Not provided'}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">CGPA:</span>
+                                        <span class="font-bold text-blue-600">${profile.cgpa || '0.00'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('profileContainer').innerHTML = profileHtml;
+                } else {
+                    throw new Error('Invalid response format');
+                }
+            } catch (error) {
+                console.error('Load student profile error:', error);
+                document.getElementById('profileContainer').innerHTML = createEmptyState('👤', 'No Profile Data', 'Your profile information is not available yet.');
+                showAlert('Failed to load profile data', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load student attendance
+        async function loadStudentAttendance() {
+            try {
+                showLoading(true);
+                const result = await studentApiCall('/student/attendance');
+                
+                if (result.success && result.data && result.data.attendance) {
+                    const attendance = result.data.attendance;
+                    if (attendance.length > 0) {
+                        // Group attendance by subject
+                        const attendanceBySubject = attendance.reduce((acc, record) => {
+                            const subject = record.subject || 'Unknown Subject';
+                            if (!acc[subject]) {
+                                acc[subject] = { records: [], present: 0, total: 0 };
+                            }
+                            acc[subject].records.push(record);
+                            acc[subject].total++;
+                            if (record.status === 'present') {
+                                acc[subject].present++;
+                            }
+                            return acc;
+                        }, {});
+                        
+                        const attendanceHtml = Object.entries(attendanceBySubject).map(([subject, data]) => {
+                            const percentage = Math.round((data.present / data.total) * 100);
+                            return `
+                                <div class="bg-white p-6 rounded-lg shadow mb-4">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h4 class="font-semibold text-gray-900">${subject}</h4>
+                                        <div class="text-right">
+                                            <div class="text-2xl font-bold ${percentage >= 75 ? 'text-green-600' : 'text-red-600'}">${percentage}%</div>
+                                            <div class="text-sm text-gray-600">${data.present}/${data.total} classes</div>
+                                        </div>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                                        <div class="${percentage >= 75 ? 'bg-green-600' : 'bg-red-600'} h-2 rounded-full" style="width: ${percentage}%"></div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                        ${data.records.slice(0, 6).map(record => `
+                                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                                <span class="text-sm">${new Date(record.date).toLocaleDateString()}</span>
+                                                <span class="px-2 py-1 rounded text-xs status-${record.status}">
+                                                    ${record.status}
+                                                </span>
+                                            </div>
+                                        `).join('')}
+                                        ${data.records.length > 6 ? `<div class="text-sm text-gray-500 p-2">... and ${data.records.length - 6} more records</div>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                        
+                        document.getElementById('attendanceContainer').innerHTML = attendanceHtml;
+                    } else {
+                        document.getElementById('attendanceContainer').innerHTML = createEmptyState('📅', 'No Attendance Records', 'Your attendance records will appear here once classes begin.');
+                    }
+                } else {
+                    document.getElementById('attendanceContainer').innerHTML = createEmptyState('📅', 'No Attendance Records', 'Your attendance records will appear here once classes begin.');
+                }
+            } catch (error) {
+                console.error('Load student attendance error:', error);
+                document.getElementById('attendanceContainer').innerHTML = createEmptyState('📅', 'Error Loading Attendance', 'Unable to load your attendance records.');
+                showAlert('Failed to load attendance data', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load student marks
+        async function loadStudentMarks() {
+            try {
+                showLoading(true);
+                const result = await studentApiCall('/student/marks');
+                
+                if (result.success && result.data && result.data.marks) {
+                    const marks = result.data.marks;
+                    if (marks.length > 0) {
+                        // Group marks by subject
+                        const marksBySubject = marks.reduce((acc, record) => {
+                            const subject = record.subject || 'Unknown Subject';
+                            if (!acc[subject]) {
+                                acc[subject] = [];
+                            }
+                            acc[subject].push(record);
+                            return acc;
+                        }, {});
+                        
+                        const marksHtml = Object.entries(marksBySubject).map(([subject, records]) => {
+                            const avgPercentage = records.reduce((sum, r) => sum + (r.percentage || 0), 0) / records.length;
+                            const avgGrade = records[0]?.grade || 'N/A';
+                            
+                            return `
+                                <div class="bg-white p-6 rounded-lg shadow mb-4">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h4 class="font-semibold text-gray-900">${subject}</h4>
+                                        <div class="text-right">
+                                            <div class="text-2xl font-bold text-blue-600">${avgPercentage.toFixed(1)}%</div>
+                                            <div class="px-2 py-1 rounded text-sm grade-${avgGrade}">${avgGrade}</div>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        ${records.map(record => `
+                                            <div class="p-4 bg-gray-50 rounded-lg">
+                                                <div class="flex justify-between items-center mb-2">
+                                                    <span class="font-medium">${record.examType || 'Exam'}</span>
+                                                    <span class="px-2 py-1 rounded text-sm grade-${record.grade || 'F'}">${record.grade || 'N/A'}</span>
+                                                </div>
+                                                <div class="text-sm text-gray-600">
+                                                    <div>Marks: ${record.totalMarks || 0}/${record.maxMarks || 100}</div>
+                                                    <div>Percentage: ${record.percentage || 0}%</div>
+                                                    <div>Credits: ${record.credits || 0}</div>
+                                                    <div>Date: ${new Date(record.dateRecorded).toLocaleDateString()}</div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                        
+                        document.getElementById('marksContainer').innerHTML = marksHtml;
+                    } else {
+                        document.getElementById('marksContainer').innerHTML = createEmptyState('📊', 'No Marks Available', 'Your marks and grades will appear here once exams are conducted.');
+                    }
+                } else {
+                    document.getElementById('marksContainer').innerHTML = createEmptyState('📊', 'No Marks Available', 'Your marks and grades will appear here once exams are conducted.');
+                }
+            } catch (error) {
+                console.error('Load student marks error:', error);
+                document.getElementById('marksContainer').innerHTML = createEmptyState('📊', 'Error Loading Marks', 'Unable to load your marks and grades.');
+                showAlert('Failed to load marks data', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }       
+ // Load student courses
+        async function loadStudentCourses() {
+            try {
+                showLoading(true);
+                const result = await studentApiCall('/student/profile');
+                
+                if (result.success) {
+                    const profile = result.data;
+                    const selectedCourses = profile.selectedCourses || [];
+                    
+                    if (selectedCourses.length > 0) {
+                        const coursesHtml = `
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h4 class="font-semibold text-gray-900 mb-4">Selected Courses</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    ${selectedCourses.map(course => `
+                                        <div class="p-4 border rounded-lg">
+                                            <h5 class="font-medium text-gray-900">${course.subjectName || 'Course Name'}</h5>
+                                            <p class="text-sm text-gray-600">Code: ${course.subjectCode || 'N/A'}</p>
+                                            <p class="text-sm text-gray-600">Credits: ${course.credits || 0}</p>
+                                            <p class="text-sm text-gray-600">Faculty: ${course.facultyName || 'Not assigned'}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-6 rounded-lg shadow mt-6">
+                                <h4 class="font-semibold text-gray-900 mb-4">Course Information</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-blue-600">${profile.course || 'Not assigned'}</div>
+                                        <div class="text-sm text-gray-600">Program</div>
+                                    </div>
+                                    <div class="text-center p-4 bg-green-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-green-600">${profile.semester || 0}</div>
+                                        <div class="text-sm text-gray-600">Current Semester</div>
+                                    </div>
+                                    <div class="text-center p-4 bg-purple-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-purple-600">${selectedCourses.reduce((sum, course) => sum + (course.credits || 0), 0)}</div>
+                                        <div class="text-sm text-gray-600">Total Credits</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        document.getElementById('coursesContainer').innerHTML = coursesHtml;
+                    } else {
+                        document.getElementById('coursesContainer').innerHTML = createEmptyState('📚', 'No Courses Selected', 'Your course selection will appear here once you enroll in subjects.');
+                    }
+                }
+            } catch (error) {
+                console.error('Load student courses error:', error);
+                document.getElementById('coursesContainer').innerHTML = createEmptyState('📚', 'Error Loading Courses', 'Unable to load your course information.');
+                showAlert('Failed to load course data', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load student notices
+        async function loadStudentNotices() {
+            try {
+                showLoading(true);
+                const result = await studentApiCall('/student/notices');
+                
+                if (result.success && result.data && result.data.notices) {
+                    const notices = result.data.notices;
+                    if (notices.length > 0) {
+                        const noticesHtml = notices.map(notice => `
+                            <div class="bg-white p-6 rounded-lg shadow mb-4 border-l-4 ${notice.priority === 'urgent' ? 'border-red-500' : notice.priority === 'important' ? 'border-yellow-500' : 'border-blue-500'}">
+                                <div class="flex justify-between items-start mb-3">
+                                    <h4 class="font-semibold text-gray-900">${notice.title}</h4>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="px-2 py-1 rounded text-sm ${notice.priority === 'urgent' ? 'bg-red-100 text-red-800' : notice.priority === 'important' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">
+                                            ${notice.priority}
+                                        </span>
+                                        <span class="px-2 py-1 rounded text-sm bg-gray-100 text-gray-800">
+                                            ${notice.category || 'General'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <p class="text-gray-700 mb-3">${notice.content}</p>
+                                <div class="flex justify-between items-center text-sm text-gray-500">
+                                    <span>Published: ${new Date(notice.publishDate).toLocaleDateString()}</span>
+                                    <span>By: ${notice.facultyName || 'Administration'}</span>
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        document.getElementById('noticesContainer').innerHTML = noticesHtml;
+                    } else {
+                        document.getElementById('noticesContainer').innerHTML = createEmptyState('📢', 'No Notices Available', 'Important notices and announcements will appear here.');
+                    }
+                } else {
+                    document.getElementById('noticesContainer').innerHTML = createEmptyState('📢', 'No Notices Available', 'Important notices and announcements will appear here.');
+                }
+            } catch (error) {
+                console.error('Load student notices error:', error);
+                document.getElementById('noticesContainer').innerHTML = createEmptyState('📢', 'Error Loading Notices', 'Unable to load notices and announcements.');
+                showAlert('Failed to load notices', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load student resources
+        async function loadStudentResources() {
+            try {
+                showLoading(true);
+                const result = await studentApiCall('/student/resources');
+                
+                if (result.success && result.data && result.data.resources) {
+                    const resources = result.data.resources;
+                    if (resources.length > 0) {
+                        const resourcesHtml = `
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                ${resources.map(resource => `
+                                    <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+                                        <div class="flex items-center mb-4">
+                                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                                <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                                                </svg>
+                                            </div>
+                                            <div class="ml-3 flex-1">
+                                                <h4 class="font-semibold text-gray-900">${resource.title}</h4>
+                                                <p class="text-sm text-gray-600">${resource.subject || 'General'}</p>
+                                            </div>
+                                        </div>
+                                        <div class="space-y-2 text-sm text-gray-600 mb-4">
+                                            <div><strong>Type:</strong> ${resource.resourceType || 'Document'}</div>
+                                            <div><strong>Faculty:</strong> ${resource.facultyName || 'Unknown'}</div>
+                                            <div><strong>Uploaded:</strong> ${new Date(resource.uploadDate).toLocaleDateString()}</div>
+                                        </div>
+                                        <p class="text-sm text-gray-700 mb-4">${resource.description || 'No description available'}</p>
+                                        <button onclick="downloadResource('${resource.id}')" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                                            📥 Download
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                        
+                        document.getElementById('resourcesContainer').innerHTML = resourcesHtml;
+                    } else {
+                        document.getElementById('resourcesContainer').innerHTML = createEmptyState('📚', 'No Resources Available', 'Learning resources and study materials will appear here.');
+                    }
+                } else {
+                    document.getElementById('resourcesContainer').innerHTML = createEmptyState('📚', 'No Resources Available', 'Learning resources and study materials will appear here.');
+                }
+            } catch (error) {
+                console.error('Load student resources error:', error);
+                document.getElementById('resourcesContainer').innerHTML = createEmptyState('📚', 'Error Loading Resources', 'Unable to load learning resources.');
+                showAlert('Failed to load resources', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load student leaves
+        async function loadStudentLeaves() {
+            try {
+                showLoading(true);
+                const result = await studentApiCall('/student/leaves');
+                
+                if (result.success && result.data && result.data.leaves) {
+                    const leaves = result.data.leaves;
+                    if (leaves.length > 0) {
+                        const leavesHtml = leaves.map(leave => `
+                            <div class="bg-white p-6 rounded-lg shadow mb-4">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">${leave.leaveType || 'Leave Application'}</h4>
+                                        <p class="text-sm text-gray-600">${leave.totalDays || 0} days</p>
+                                    </div>
+                                    <span class="px-3 py-1 rounded-full text-sm ${
+                                        leave.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                        leave.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                        'bg-red-100 text-red-800'
+                                    }">
+                                        ${leave.status}
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 text-sm mb-3">
+                                    <div><strong>From:</strong> ${new Date(leave.fromDate).toLocaleDateString()}</div>
+                                    <div><strong>To:</strong> ${new Date(leave.toDate).toLocaleDateString()}</div>
+                                    <div><strong>Applied:</strong> ${new Date(leave.appliedDate).toLocaleDateString()}</div>
+                                    <div><strong>Priority:</strong> ${leave.priority || 'Normal'}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Reason:</strong>
+                                    <p class="text-gray-700 mt-1">${leave.reason}</p>
+                                </div>
+                                ${leave.reviewComments ? `
+                                    <div class="mt-3 p-3 bg-gray-50 rounded">
+                                        <strong>Review Comments:</strong>
+                                        <p class="text-gray-700 mt-1">${leave.reviewComments}</p>
+                                    </div>
+                                ` : ''}
+                                ${leave.status === 'pending' ? `
+                                    <div class="mt-4">
+                                        <button onclick="cancelLeave('${leave.id}')" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                                            Cancel Application
+                                        </button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('');
+                        
+                        document.getElementById('leavesContainer').innerHTML = leavesHtml;
+                    } else {
+                        document.getElementById('leavesContainer').innerHTML = createEmptyState('🏖️', 'No Leave Applications', 'Your leave applications will appear here. Click "Apply for Leave" to submit a new application.');
+                    }
+                } else {
+                    document.getElementById('leavesContainer').innerHTML = createEmptyState('🏖️', 'No Leave Applications', 'Your leave applications will appear here. Click "Apply for Leave" to submit a new application.');
+                }
+            } catch (error) {
+                console.error('Load student leaves error:', error);
+                document.getElementById('leavesContainer').innerHTML = createEmptyState('🏖️', 'Error Loading Leaves', 'Unable to load your leave applications.');
+                showAlert('Failed to load leave applications', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }      
+  // Create empty state
+        function createEmptyState(icon, title, description) {
+            return `
+                <div class="empty-state rounded-lg p-12 text-center">
+                    <div class="text-6xl mb-4">${icon}</div>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">${title}</h3>
+                    <p class="text-gray-500">${description}</p>
+                </div>
+            `;
+        }
+
+        // Modal functions
+        function showApplyLeaveModal() {
+            document.getElementById('applyLeaveModal').classList.remove('hidden');
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('leaveFromDate').min = today;
+            document.getElementById('leaveToDate').min = today;
+        }
+
+        function closeApplyLeaveModal() {
+            document.getElementById('applyLeaveModal').classList.add('hidden');
+            document.getElementById('applyLeaveForm').reset();
+        }
+
+        // Handle apply leave
+        async function handleApplyLeave(event) {
+            event.preventDefault();
+            
+            const fromDate = new Date(document.getElementById('leaveFromDate').value);
+            const toDate = new Date(document.getElementById('leaveToDate').value);
+            
+            if (toDate < fromDate) {
+                showAlert('To date cannot be earlier than from date', 'error');
+                return;
+            }
+            
+            const totalDays = Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1;
+            
+            const formData = {
+                leaveType: document.getElementById('leaveType').value,
+                priority: document.getElementById('leavePriority').value,
+                fromDate: document.getElementById('leaveFromDate').value,
+                toDate: document.getElementById('leaveToDate').value,
+                totalDays: totalDays,
+                reason: document.getElementById('leaveReason').value,
+                contactInfo: document.getElementById('leaveContact').value
+            };
+            
+            try {
+                showLoading(true);
+                const result = await studentApiCall('/student/leave', {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+                
+                if (result.success) {
+                    showAlert('Leave application submitted successfully!', 'success');
+                    closeApplyLeaveModal();
+                    loadStudentLeaves();
+                }
+            } catch (error) {
+                console.error('Apply leave error:', error);
+                showAlert('Failed to submit leave application', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Cancel leave application
+        async function cancelLeave(leaveId) {
+            if (!confirm('Are you sure you want to cancel this leave application?')) return;
+            
+            try {
+                showLoading(true);
+                const result = await studentApiCall(`/student/leave/${leaveId}/cancel`, {
+                    method: 'PATCH'
+                });
+                
+                if (result.success) {
+                    showAlert('Leave application cancelled successfully!', 'success');
+                    loadStudentLeaves();
+                }
+            } catch (error) {
+                console.error('Cancel leave error:', error);
+                showAlert('Failed to cancel leave application', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Download resource
+        async function downloadResource(resourceId) {
+            try {
+                showLoading(true);
+                
+                // Make request to download endpoint
+                const response = await fetch(`${API_BASE}/student/resource/${resourceId}/download`, {
+                    headers: {
+                        'Authorization': `Bearer ${studentToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    // Get the filename from Content-Disposition header
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let filename = 'download';
+                    
+                    if (contentDisposition) {
+                        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                        if (filenameMatch) {
+                            filename = filenameMatch[1];
+                        }
+                    }
+
+                    // Create blob and download
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    showAlert('Resource downloaded successfully!', 'success');
+                } else {
+                    const errorData = await response.json();
+                    showAlert(errorData.message || 'Failed to download resource', 'error');
+                }
+            } catch (error) {
+                console.error('Download resource error:', error);
+                showAlert('Error downloading resource', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('studentToken');
+            localStorage.removeItem('currentStudent');
+            studentToken = null;
+            currentStudent = null;
+            
+            document.getElementById('studentDashboard').classList.add('hidden');
+            document.getElementById('studentInfo').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            showStudentLoginModal();
+            
+            showAlert('Student logged out successfully', 'success');
+        }
+
+        // Show loading overlay
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            if (show) {
+                overlay.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // Show alert messages
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                type === 'info' ? 'bg-blue-500 text-white' :
+                'bg-gray-500 text-white'
+            }`;
+            alertDiv.textContent = message;
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

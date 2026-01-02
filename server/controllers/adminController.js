@@ -1,408 +1,117 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 const User = require('../models/User');
+const FacultyProfile = require('../models/FacultyProfile');
+const StudentProfile = require('../models/StudentProfile');
+const Attendance = require('../models/Attendance');
+const Marks = require('../models/Marks');
+const Notice = require('../models/Notice');
+const Resource = require('../models/Resource');
+const Leave = require('../models/Leave');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
-/**
- * Admin Login
- * POST /api/admin/login
- */
+// Admin login
 const adminLogin = async (req, res) => {
-    console.log('🔍 === ADMIN LOGIN REQUEST ===');
-    console.log('📝 Request Body:', JSON.stringify(req.body, null, 2));
-    
     try {
         const { email, password } = req.body;
 
-        // Validate required fields
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email and password are required'
-            });
-        }
-
-        // Check if database is connected
-        if (mongoose.connection.readyState !== 1) {
-            console.log('⚠️  Database not connected - using fallback admin authentication');
-            
-            // Fallback admin users (for testing when DB is not available)
-            const fallbackAdmins = [
-                { email: 'admin@cukashmir.ac.in', password: 'admin123', name: 'System Administrator', role: 'admin' },
-                { email: 'dean@cukashmir.ac.in', password: 'dean123', name: 'Dean Administrator', role: 'admin' }
-            ];
-            
-            const admin = fallbackAdmins.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-            
-            if (!admin) {
-                console.log('❌ Fallback admin login failed: Invalid credentials -', email);
-                return res.status(401).json({
-                    success: false,
-                    message: 'Invalid admin credentials'
-                });
-            }
-            
-            // Generate JWT token
-            const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_key_for_development';
-            const token = jwt.sign(
-                { 
-                    userId: 'admin_fallback_' + Date.now(), 
-                    email: admin.email, 
-                    role: admin.role 
-                },
-                jwtSecret,
-                { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '24h' }
-            );
-
-            console.log('✅ Fallback admin login successful for:', admin.email);
-
-            return res.status(200).json({
-                success: true,
-                message: 'Admin login successful (fallback mode)',
-                data: {
-                    token: token,
-                    user: {
-                        id: 'admin_fallback_' + Date.now(),
-                        name: admin.name,
-                        email: admin.email,
-                        role: admin.role,
-                        createdAt: new Date()
-                    }
-                }
-            });
-        }
-
-        // Normal database authentication
-        const user = await User.findOne({ email: email.toLowerCase() });
-        if (!user) {
-            console.log('❌ Admin login failed: User not found -', email);
+        // Find admin user
+        const admin = await User.findOne({ email, role: 'admin' });
+        if (!admin) {
             return res.status(401).json({
                 success: false,
                 message: 'Invalid admin credentials'
-            });
-        }
-
-        // Check if user is admin
-        if (user.role !== 'admin') {
-            console.log('❌ Admin login failed: User is not admin -', email);
-            return res.status(403).json({
-                success: false,
-                message: 'Access denied. Admin privileges required.'
             });
         }
 
         // Check password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            console.log('❌ Admin login failed: Invalid password for -', email);
+        const isValidPassword = await admin.comparePassword(password);
+        if (!isValidPassword) {
             return res.status(401).json({
                 success: false,
                 message: 'Invalid admin credentials'
             });
         }
 
+        // Check if admin is approved
+        if (admin.status !== 'approved') {
+            return res.status(401).json({
+                success: false,
+                message: 'Admin account is not approved'
+            });
+        }
+
+        // Update last login
+        admin.lastLogin = new Date();
+        await admin.save();
+
         // Generate JWT token
-        const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_key_for_development';
         const token = jwt.sign(
             { 
-                userId: user._id, 
-                email: user.email, 
-                role: user.role 
+                userId: admin._id, 
+                email: admin.email, 
+                role: admin.role 
             },
-            jwtSecret,
-            { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '24h' }
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
         );
 
-        console.log('✅ Admin login successful for:', user.email);
-
-        res.status(200).json({
+        res.json({
             success: true,
             message: 'Admin login successful',
             data: {
-                token: token,
-                user: {
-                    id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    createdAt: user.createdAt
+                token,
+                admin: {
+                    id: admin._id,
+                    name: admin.name,
+                    email: admin.email,
+                    role: admin.role
                 }
             }
         });
-
     } catch (error) {
-        console.error('🔍 === ADMIN LOGIN ERROR ===');
-        console.error('❌ Error:', error.message);
-        
+        console.error('Admin login error:', error);
         res.status(500).json({
             success: false,
-            message: 'Server error during admin login'
+            message: 'Admin login failed',
+            error: error.message
         });
     }
 };
 
-/**
- * Get Dashboard Statistics
- * GET /api/admin/stats
- */
-const getDashboardStats = async (req, res) => {
+// Get pending registrations
+const getPendingRegistrations = async (req, res) => {
     try {
-        // Check if database is connected
-        if (mongoose.connection.readyState !== 1) {
-            console.log('⚠️  Database not connected - returning fallback stats');
-            return res.status(200).json({
-                success: true,
-                data: {
-                    totalStudents: 15,
-                    totalTeachers: 8,
-                    totalUsers: 24,
-                    recentRegistrations: 3
-                }
-            });
-        }
-
-        // Get actual statistics from database
-        const totalStudents = await User.countDocuments({ role: 'student' });
-        const totalTeachers = await User.countDocuments({ role: 'teacher' });
-        const totalAdmins = await User.countDocuments({ role: 'admin' });
-        const totalUsers = totalStudents + totalTeachers + totalAdmins;
-
-        // Get recent registrations (last 7 days)
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const recentRegistrations = await User.countDocuments({
-            createdAt: { $gte: sevenDaysAgo }
-        });
-
-        res.status(200).json({
-            success: true,
-            data: {
-                totalStudents,
-                totalTeachers,
-                totalAdmins,
-                totalUsers,
-                recentRegistrations
-            }
-        });
-
-    } catch (error) {
-        console.error('Dashboard stats error:', error.message);
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching dashboard statistics'
-        });
-    }
-};
-
-/**
- * Get All Students
- * GET /api/admin/students
- */
-const getAllStudents = async (req, res) => {
-    try {
-        // Check if database is connected
-        if (mongoose.connection.readyState !== 1) {
-            console.log('⚠️  Database not connected - returning fallback students');
-            const fallbackStudents = [
-                { _id: '1', name: 'Aarav Sharma', email: 'aarav.sharma@student.cukashmir.ac.in', role: 'student', createdAt: new Date('2024-01-15') },
-                { _id: '2', name: 'Priya Patel', email: 'priya.patel@student.cukashmir.ac.in', role: 'student', createdAt: new Date('2024-01-16') },
-                { _id: '3', name: 'Rahul Kumar', email: 'rahul.kumar@student.cukashmir.ac.in', role: 'student', createdAt: new Date('2024-01-17') },
-                { _id: '4', name: 'Sneha Gupta', email: 'sneha.gupta@student.cukashmir.ac.in', role: 'student', createdAt: new Date('2024-01-18') },
-                { _id: '5', name: 'Arjun Singh', email: 'arjun.singh@student.cukashmir.ac.in', role: 'student', createdAt: new Date('2024-01-19') }
-            ];
-            
-            return res.status(200).json({
-                success: true,
-                data: fallbackStudents
-            });
-        }
-
-        // Get students from database
-        const students = await User.find({ role: 'student' })
+        const pendingUsers = await User.find({ status: 'pending' })
             .select('-password')
             .sort({ createdAt: -1 });
 
-        res.status(200).json({
+        res.json({
             success: true,
-            data: students
+            data: pendingUsers
         });
-
     } catch (error) {
-        console.error('Get students error:', error.message);
+        console.error('Get pending registrations error:', error);
         res.status(500).json({
             success: false,
-            message: 'Error fetching students'
+            message: 'Failed to fetch pending registrations',
+            error: error.message
         });
     }
 };
 
-/**
- * Get All Teachers
- * GET /api/admin/teachers
- */
-const getAllTeachers = async (req, res) => {
-    try {
-        // Check if database is connected
-        if (mongoose.connection.readyState !== 1) {
-            console.log('⚠️  Database not connected - returning fallback teachers');
-            const fallbackTeachers = [
-                { _id: '101', name: 'Dr. Rajesh Verma', email: 'rajesh.verma@cukashmir.ac.in', role: 'teacher', createdAt: new Date('2024-01-01') },
-                { _id: '102', name: 'Prof. Sunita Sharma', email: 'sunita.sharma@cukashmir.ac.in', role: 'teacher', createdAt: new Date('2024-01-02') },
-                { _id: '103', name: 'Dr. Amit Kumar', email: 'amit.kumar@cukashmir.ac.in', role: 'teacher', createdAt: new Date('2024-01-03') },
-                { _id: '104', name: 'Prof. Meera Joshi', email: 'meera.joshi@cukashmir.ac.in', role: 'teacher', createdAt: new Date('2024-01-04') }
-            ];
-            
-            return res.status(200).json({
-                success: true,
-                data: fallbackTeachers
-            });
-        }
-
-        // Get teachers from database
-        const teachers = await User.find({ role: 'teacher' })
-            .select('-password')
-            .sort({ createdAt: -1 });
-
-        res.status(200).json({
-            success: true,
-            data: teachers
-        });
-
-    } catch (error) {
-        console.error('Get teachers error:', error.message);
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching teachers'
-        });
-    }
-};
-
-/**
- * Create Teacher Account
- * POST /api/admin/create-teacher
- */
-const createTeacher = async (req, res) => {
-    try {
-        const { name, email, password } = req.body;
-
-        // Validate required fields
-        if (!name || !email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Name, email, and password are required'
-            });
-        }
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Please provide a valid email address'
-            });
-        }
-
-        // Validate password length
-        if (password.length < 6) {
-            return res.status(400).json({
-                success: false,
-                message: 'Password must be at least 6 characters long'
-            });
-        }
-
-        // Check if database is connected
-        if (mongoose.connection.readyState !== 1) {
-            console.log('⚠️  Database not connected - simulating teacher creation');
-            return res.status(201).json({
-                success: true,
-                message: 'Teacher account created successfully (simulation mode)',
-                data: {
-                    id: 'teacher_' + Date.now(),
-                    name: name.trim(),
-                    email: email.toLowerCase().trim(),
-                    role: 'teacher',
-                    createdAt: new Date()
-                }
-            });
-        }
-
-        // Check if email already exists
-        const existingUser = await User.findOne({ email: email.toLowerCase() });
-        if (existingUser) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email is already registered'
-            });
-        }
-
-        // Create new teacher
-        const newTeacher = new User({
-            name: name.trim(),
-            email: email.toLowerCase().trim(),
-            password: password,
-            role: 'teacher'
-        });
-
-        const savedTeacher = await newTeacher.save();
-        console.log('✅ Teacher created:', savedTeacher.email);
-
-        res.status(201).json({
-            success: true,
-            message: 'Teacher account created successfully',
-            data: {
-                id: savedTeacher._id,
-                name: savedTeacher.name,
-                email: savedTeacher.email,
-                role: savedTeacher.role,
-                createdAt: savedTeacher.createdAt
-            }
-        });
-
-    } catch (error) {
-        console.error('Create teacher error:', error.message);
-        
-        // Handle duplicate key error
-        if (error.code === 11000) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email is already registered'
-            });
-        }
-
-        // Handle validation errors
-        if (error.name === 'ValidationError') {
-            const validationErrors = Object.values(error.errors).map(err => err.message);
-            return res.status(400).json({
-                success: false,
-                message: validationErrors.join(', ')
-            });
-        }
-
-        res.status(500).json({
-            success: false,
-            message: 'Error creating teacher account'
-        });
-    }
-};
-
-/**
- * Delete User (Student or Teacher)
- * DELETE /api/admin/user/:id
- */
-const deleteUser = async (req, res) => {
+// Update user status (approve/reject)
+const updateUserStatus = async (req, res) => {
     try {
         const { id } = req.params;
+        const { status, reason } = req.body;
 
-        // Check if database is connected
-        if (mongoose.connection.readyState !== 1) {
-            console.log('⚠️  Database not connected - simulating user deletion');
-            return res.status(200).json({
-                success: true,
-                message: 'User deleted successfully (simulation mode)'
+        if (!['approved', 'rejected'].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status. Must be approved or rejected'
             });
         }
 
-        // Find user
         const user = await User.findById(id);
         if (!user) {
             return res.status(404).json({
@@ -411,101 +120,802 @@ const deleteUser = async (req, res) => {
             });
         }
 
-        // Prevent deletion of admin users
-        if (user.role === 'admin') {
-            return res.status(403).json({
-                success: false,
-                message: 'Cannot delete admin users'
-            });
+        user.status = status;
+        if (status === 'approved') {
+            user.approvedBy = req.user.userId;
+            user.approvedAt = new Date();
+        } else {
+            user.rejectedAt = new Date();
+            user.rejectionReason = reason;
         }
 
-        // Delete user
-        await User.findByIdAndDelete(id);
-        console.log('✅ User deleted:', user.email);
+        await user.save();
 
-        res.status(200).json({
+        res.json({
             success: true,
-            message: `${user.role} deleted successfully`
+            message: `User ${status} successfully`,
+            data: user
         });
-
     } catch (error) {
-        console.error('Delete user error:', error.message);
-        
-        if (error.name === 'CastError') {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid user ID'
-            });
-        }
-
+        console.error('Update user status error:', error);
         res.status(500).json({
             success: false,
-            message: 'Error deleting user'
+            message: 'Failed to update user status',
+            error: error.message
         });
     }
 };
 
-/**
- * Approve Student Registration
- * PATCH /api/admin/approve-student/:id
- */
-const approveStudent = async (req, res) => {
+// Create user manually
+const createUser = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { name, email, password, role, ...profileData } = req.body;
 
-        // Check if database is connected
-        if (mongoose.connection.readyState !== 1) {
-            console.log('⚠️  Database not connected - simulating student approval');
-            return res.status(200).json({
-                success: true,
-                message: 'Student approved successfully (simulation mode)'
-            });
-        }
-
-        // Find student
-        const student = await User.findById(id);
-        if (!student) {
-            return res.status(404).json({
-                success: false,
-                message: 'Student not found'
-            });
-        }
-
-        if (student.role !== 'student') {
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: 'User is not a student'
+                message: 'User with this email already exists'
             });
         }
 
-        // For now, we'll just return success since we don't have an approval status field
-        // In a real system, you might add an 'approved' field to the User schema
-        console.log('✅ Student approved:', student.email);
-
-        res.status(200).json({
-            success: true,
-            message: 'Student approved successfully',
-            data: {
-                id: student._id,
-                name: student.name,
-                email: student.email,
-                role: student.role
-            }
+        // Create user
+        const user = new User({
+            name,
+            email,
+            password,
+            role,
+            status: 'approved', // Admin-created users are auto-approved
+            approvedBy: req.user.id,
+            approvedAt: new Date()
         });
 
+        await user.save();
+
+        // Create profile based on role
+        if (role === 'faculty') {
+            const facultyProfile = new FacultyProfile({
+                userId: user._id,
+                ...profileData
+            });
+            await facultyProfile.save();
+        } else if (role === 'student') {
+            const studentProfile = new StudentProfile({
+                userId: user._id,
+                ...profileData
+            });
+            await studentProfile.save();
+        }
+
+        res.status(201).json({
+            success: true,
+            message: 'User created successfully',
+            data: { userId: user._id, email: user.email }
+        });
     } catch (error) {
-        console.error('Approve student error:', error.message);
+        console.error('Create user error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create user',
+            error: error.message
+        });
+    }
+};
+
+// Admin Dashboard - Get overview statistics
+const getDashboardStats = async (req, res) => {
+    try {
+        const stats = {
+            users: {
+                total: await User.countDocuments(),
+                pending: await User.countDocuments({ status: 'pending' }),
+                approved: await User.countDocuments({ status: 'approved' }),
+                students: await User.countDocuments({ role: 'student' }),
+                faculty: await User.countDocuments({ role: 'faculty' })
+            },
+            registrations: {
+                pendingStudents: await User.countDocuments({ role: 'student', status: 'pending' }),
+                pendingFaculty: await User.countDocuments({ role: 'faculty', status: 'pending' })
+            },
+            leaves: {
+                pending: await Leave.countDocuments({ status: 'pending' }),
+                approved: await Leave.countDocuments({ status: 'approved' }),
+                rejected: await Leave.countDocuments({ status: 'rejected' })
+            },
+            notices: {
+                active: await Notice.countDocuments({ isActive: true }),
+                total: await Notice.countDocuments()
+            },
+            resources: {
+                total: await Resource.countDocuments({ isActive: true })
+            }
+        };
+
+        res.json({
+            success: true,
+            data: stats
+        });
+    } catch (error) {
+        console.error('Dashboard stats error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch dashboard statistics',
+            error: error.message
+        });
+    }
+};
+
+// USER MANAGEMENT
+
+// Get all users with filters
+const getAllUsers = async (req, res) => {
+    try {
+        const { role, status, page = 1, limit = 20, search } = req.query;
         
-        if (error.name === 'CastError') {
-            return res.status(400).json({
+        const query = {};
+        if (role) query.role = role;
+        if (status) query.status = status;
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const users = await User.find(query)
+            .select('-password')
+            .sort({ createdAt: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit)
+            .populate('approvedBy', 'name email');
+
+        const total = await User.countDocuments(query);
+
+        res.json({
+            success: true,
+            data: {
+                users,
+                pagination: {
+                    current: page,
+                    pages: Math.ceil(total / limit),
+                    total
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Get users error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch users',
+            error: error.message
+        });
+    }
+};
+
+// Approve user registration
+const approveUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { comments } = req.body;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
                 success: false,
-                message: 'Invalid student ID'
+                message: 'User not found'
             });
         }
 
+        user.status = 'approved';
+        user.approvedBy = req.user.userId;
+        user.approvedAt = new Date();
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'User approved successfully',
+            data: user
+        });
+    } catch (error) {
+        console.error('Approve user error:', error);
         res.status(500).json({
             success: false,
-            message: 'Error approving student'
+            message: 'Failed to approve user',
+            error: error.message
+        });
+    }
+};
+
+// Reject user registration
+const rejectUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { reason } = req.body;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        user.status = 'rejected';
+        user.rejectedAt = new Date();
+        user.rejectionReason = reason;
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'User rejected successfully',
+            data: user
+        });
+    } catch (error) {
+        console.error('Reject user error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to reject user',
+            error: error.message
+        });
+    }
+};
+
+// Delete user
+const deleteUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Delete associated profile
+        if (user.role === 'faculty') {
+            await FacultyProfile.findOneAndDelete({ userId });
+        } else if (user.role === 'student') {
+            await StudentProfile.findOneAndDelete({ userId });
+            // Also delete related academic records
+            await Attendance.deleteMany({ studentId: userId });
+            await Marks.deleteMany({ studentId: userId });
+        }
+
+        // Delete user
+        await User.findByIdAndDelete(userId);
+
+        res.json({
+            success: true,
+            message: 'User deleted successfully'
+        });
+    } catch (error) {
+        console.error('Delete user error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete user',
+            error: error.message
+        });
+    }
+};
+
+// Add user manually
+const addUser = async (req, res) => {
+    try {
+        const { name, email, password, role, ...profileData } = req.body;
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: 'User with this email already exists'
+            });
+        }
+
+        // Create user
+        const user = new User({
+            name,
+            email,
+            password,
+            role,
+            status: 'approved', // Admin-created users are auto-approved
+            approvedBy: req.user.id,
+            approvedAt: new Date()
+        });
+
+        await user.save();
+
+        // Create profile based on role
+        if (role === 'faculty') {
+            const facultyProfile = new FacultyProfile({
+                userId: user._id,
+                ...profileData
+            });
+            await facultyProfile.save();
+        } else if (role === 'student') {
+            const studentProfile = new StudentProfile({
+                userId: user._id,
+                ...profileData
+            });
+            await studentProfile.save();
+        }
+
+        res.status(201).json({
+            success: true,
+            message: 'User created successfully',
+            data: { userId: user._id, email: user.email }
+        });
+    } catch (error) {
+        console.error('Add user error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create user',
+            error: error.message
+        });
+    }
+};
+
+// FACULTY MANAGEMENT
+
+// Get all faculty with their profiles
+const getAllFaculty = async (req, res) => {
+    try {
+        const { department, designation, page = 1, limit = 20 } = req.query;
+        
+        const query = { role: 'faculty' };
+        const profileQuery = {};
+        
+        if (department) profileQuery.department = department;
+        if (designation) profileQuery.designation = designation;
+
+        const faculty = await User.find(query)
+            .select('-password')
+            .populate({
+                path: 'userId',
+                match: profileQuery,
+                model: 'FacultyProfile'
+            })
+            .sort({ createdAt: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        // Filter out faculty without matching profiles
+        const filteredFaculty = faculty.filter(f => f.userId);
+
+        res.json({
+            success: true,
+            data: filteredFaculty
+        });
+    } catch (error) {
+        console.error('Get faculty error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch faculty',
+            error: error.message
+        });
+    }
+};
+
+// Update faculty profile
+const updateFacultyProfile = async (req, res) => {
+    try {
+        const { facultyId } = req.params;
+        const updateData = req.body;
+
+        const facultyProfile = await FacultyProfile.findByIdAndUpdate(
+            facultyId,
+            updateData,
+            { new: true, runValidators: true }
+        ).populate('userId', 'name email');
+
+        if (!facultyProfile) {
+            return res.status(404).json({
+                success: false,
+                message: 'Faculty profile not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Faculty profile updated successfully',
+            data: facultyProfile
+        });
+    } catch (error) {
+        console.error('Update faculty error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update faculty profile',
+            error: error.message
+        });
+    }
+};
+
+// STUDENT MANAGEMENT
+
+// Get all students with their profiles
+const getAllStudents = async (req, res) => {
+    try {
+        const { course, semester, department, page = 1, limit = 20 } = req.query;
+        
+        const query = { role: 'student' };
+        const profileQuery = {};
+        
+        if (course) profileQuery.course = course;
+        if (semester) profileQuery.semester = parseInt(semester);
+        if (department) profileQuery.department = department;
+
+        const students = await User.find(query)
+            .select('-password')
+            .populate({
+                path: 'userId',
+                match: profileQuery,
+                model: 'StudentProfile'
+            })
+            .sort({ createdAt: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        // Filter out students without matching profiles
+        const filteredStudents = students.filter(s => s.userId);
+
+        res.json({
+            success: true,
+            data: filteredStudents
+        });
+    } catch (error) {
+        console.error('Get students error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch students',
+            error: error.message
+        });
+    }
+};
+
+// Update student profile
+const updateStudentProfile = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const updateData = req.body;
+
+        const studentProfile = await StudentProfile.findByIdAndUpdate(
+            studentId,
+            updateData,
+            { new: true, runValidators: true }
+        ).populate('userId', 'name email');
+
+        if (!studentProfile) {
+            return res.status(404).json({
+                success: false,
+                message: 'Student profile not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Student profile updated successfully',
+            data: studentProfile
+        });
+    } catch (error) {
+        console.error('Update student error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update student profile',
+            error: error.message
+        });
+    }
+};
+
+// ACADEMIC RECORDS MANAGEMENT
+
+// Get all attendance records
+const getAllAttendance = async (req, res) => {
+    try {
+        const { studentId, facultyId, subject, academicYear, page = 1, limit = 50 } = req.query;
+        
+        const query = {};
+        if (studentId) query.studentId = studentId;
+        if (facultyId) query.facultyId = facultyId;
+        if (subject) query.subject = subject;
+        if (academicYear) query.academicYear = academicYear;
+
+        const attendance = await Attendance.find(query)
+            .populate('studentId', 'rollNumber')
+            .populate('studentId.userId', 'name email')
+            .populate('facultyId', 'facultyId designation')
+            .populate('facultyId.userId', 'name email')
+            .sort({ date: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const total = await Attendance.countDocuments(query);
+
+        res.json({
+            success: true,
+            data: {
+                attendance,
+                pagination: {
+                    current: page,
+                    pages: Math.ceil(total / limit),
+                    total
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Get attendance error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch attendance records',
+            error: error.message
+        });
+    }
+};
+
+// Get all marks records
+const getAllMarks = async (req, res) => {
+    try {
+        const { studentId, facultyId, subject, academicYear, semester, page = 1, limit = 50 } = req.query;
+        
+        const query = {};
+        if (studentId) query.studentId = studentId;
+        if (facultyId) query.facultyId = facultyId;
+        if (subject) query.subject = subject;
+        if (academicYear) query.academicYear = academicYear;
+        if (semester) query.semester = parseInt(semester);
+
+        const marks = await Marks.find(query)
+            .populate('studentId', 'rollNumber')
+            .populate('studentId.userId', 'name email')
+            .populate('facultyId', 'facultyId designation')
+            .populate('facultyId.userId', 'name email')
+            .sort({ dateRecorded: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const total = await Marks.countDocuments(query);
+
+        res.json({
+            success: true,
+            data: {
+                marks,
+                pagination: {
+                    current: page,
+                    pages: Math.ceil(total / limit),
+                    total
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Get marks error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch marks records',
+            error: error.message
+        });
+    }
+};
+
+// LEAVE MANAGEMENT
+
+// Get all leave applications
+const getAllLeaves = async (req, res) => {
+    try {
+        const { status, leaveType, userId, page = 1, limit = 20 } = req.query;
+        
+        const query = {};
+        if (status) query.status = status;
+        if (leaveType) query.leaveType = leaveType;
+        if (userId) query.userId = userId;
+
+        const leaves = await Leave.find(query)
+            .populate('userId', 'name email role')
+            .populate('reviewedBy', 'name email')
+            .sort({ appliedDate: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const total = await Leave.countDocuments(query);
+
+        res.json({
+            success: true,
+            data: {
+                leaves,
+                pagination: {
+                    current: page,
+                    pages: Math.ceil(total / limit),
+                    total
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Get leaves error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch leave applications',
+            error: error.message
+        });
+    }
+};
+
+// Approve/Reject leave application
+const reviewLeave = async (req, res) => {
+    try {
+        const { leaveId } = req.params;
+        const { status, comments } = req.body;
+
+        if (!['approved', 'rejected'].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status. Must be approved or rejected'
+            });
+        }
+
+        const leave = await Leave.findById(leaveId);
+        if (!leave) {
+            return res.status(404).json({
+                success: false,
+                message: 'Leave application not found'
+            });
+        }
+
+        leave.status = status;
+        leave.reviewedBy = req.user.userId;
+        leave.reviewDate = new Date();
+        leave.reviewComments = comments;
+        await leave.save();
+
+        res.json({
+            success: true,
+            message: `Leave application ${status} successfully`,
+            data: leave
+        });
+    } catch (error) {
+        console.error('Review leave error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to review leave application',
+            error: error.message
+        });
+    }
+};
+
+// NOTICE MANAGEMENT
+
+// Get all notices
+const getAllNotices = async (req, res) => {
+    try {
+        const { facultyId, category, isActive, page = 1, limit = 20 } = req.query;
+        
+        const query = {};
+        if (facultyId) query.facultyId = facultyId;
+        if (category) query.category = category;
+        if (isActive !== undefined) query.isActive = isActive === 'true';
+
+        const notices = await Notice.find(query)
+            .populate('facultyId', 'facultyId designation')
+            .populate('facultyId.userId', 'name email')
+            .sort({ publishDate: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const total = await Notice.countDocuments(query);
+
+        res.json({
+            success: true,
+            data: {
+                notices,
+                pagination: {
+                    current: page,
+                    pages: Math.ceil(total / limit),
+                    total
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Get notices error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch notices',
+            error: error.message
+        });
+    }
+};
+
+// Delete notice
+const deleteNotice = async (req, res) => {
+    try {
+        const { noticeId } = req.params;
+
+        const notice = await Notice.findByIdAndDelete(noticeId);
+        if (!notice) {
+            return res.status(404).json({
+                success: false,
+                message: 'Notice not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Notice deleted successfully'
+        });
+    } catch (error) {
+        console.error('Delete notice error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete notice',
+            error: error.message
+        });
+    }
+};
+
+// RESOURCE MANAGEMENT
+
+// Get all resources
+const getAllResources = async (req, res) => {
+    try {
+        const { facultyId, subject, resourceType, page = 1, limit = 20 } = req.query;
+        
+        const query = {};
+        if (facultyId) query.facultyId = facultyId;
+        if (subject) query.subject = subject;
+        if (resourceType) query.resourceType = resourceType;
+
+        const resources = await Resource.find(query)
+            .populate('facultyId', 'facultyId designation')
+            .populate('facultyId.userId', 'name email')
+            .sort({ uploadDate: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const total = await Resource.countDocuments(query);
+
+        res.json({
+            success: true,
+            data: {
+                resources,
+                pagination: {
+                    current: page,
+                    pages: Math.ceil(total / limit),
+                    total
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Get resources error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch resources',
+            error: error.message
+        });
+    }
+};
+
+// Delete resource
+const deleteResource = async (req, res) => {
+    try {
+        const { resourceId } = req.params;
+
+        const resource = await Resource.findByIdAndDelete(resourceId);
+        if (!resource) {
+            return res.status(404).json({
+                success: false,
+                message: 'Resource not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Resource deleted successfully'
+        });
+    } catch (error) {
+        console.error('Delete resource error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete resource',
+            error: error.message
         });
     }
 };
@@ -513,9 +923,24 @@ const approveStudent = async (req, res) => {
 module.exports = {
     adminLogin,
     getDashboardStats,
-    getAllStudents,
-    getAllTeachers,
-    createTeacher,
+    getPendingRegistrations,
+    updateUserStatus,
+    getAllUsers,
+    approveUser,
+    rejectUser,
     deleteUser,
-    approveStudent
+    addUser,
+    createUser,
+    getAllFaculty,
+    updateFacultyProfile,
+    getAllStudents,
+    updateStudentProfile,
+    getAllAttendance,
+    getAllMarks,
+    getAllLeaves,
+    reviewLeave,
+    getAllNotices,
+    deleteNotice,
+    getAllResources,
+    deleteResource
 };
